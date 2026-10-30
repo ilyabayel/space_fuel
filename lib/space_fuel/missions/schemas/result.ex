@@ -1,4 +1,4 @@
-defmodule SpaceFuel.Missions.Result do
+defmodule SpaceFuel.Missions.Schemas.Result do
   @moduledoc "The total fuel and stages in flight order."
   defstruct total_fuel: 0, steps: []
 

@@ -1,4 +1,4 @@
-defmodule SpaceFuel.Missions.FuelCalculator do
+defmodule SpaceFuel.Missions.Services.CalculateFuel do
   @moduledoc """
   Accumulates fuel requirements backwards through a validated mission.
 
@@ -8,12 +8,13 @@ defmodule SpaceFuel.Missions.FuelCalculator do
   Phoenix and assumes callers have validated mass and step identifiers.
   """
 
-  alias SpaceFuel.Missions.Maneuver
-  alias SpaceFuel.Missions.Planet
-  alias SpaceFuel.Missions.Result
+  alias SpaceFuel.Missions.Catalogs.Planet
+  alias SpaceFuel.Missions.Schemas.FlightStep
+  alias SpaceFuel.Missions.Schemas.Result
+  alias SpaceFuel.Missions.Services.CalculateManeuverFuel
 
   @type step_input ::
-          %{required(:action) => String.t(), required(:planet) => String.t()} | SpaceFuel.Missions.FlightStep.t()
+          %{required(:action) => String.t(), required(:planet) => String.t()} | FlightStep.t()
 
   @doc """
   Calculates fuel for a positive integer dry mass in kilograms and ordered steps.
@@ -21,13 +22,13 @@ defmodule SpaceFuel.Missions.FuelCalculator do
   Steps may be maps or `FlightStep` structs with supported string `action` and
   `planet` fields. An empty route requires zero fuel.
   """
-  @spec calculate(pos_integer(), [step_input()]) :: Result.t()
-  def calculate(mass, steps) do
+  @spec call(pos_integer(), [step_input()]) :: Result.t()
+  def call(mass, steps) do
     steps
     |> Enum.reverse()
     |> Enum.reduce(%Result{}, fn step, result ->
       effective_mass = mass + result.total_fuel
-      fuel = Maneuver.fuel_required(step.action, effective_mass, Planet.gravity(step.planet))
+      fuel = CalculateManeuverFuel.call(step.action, effective_mass, Planet.gravity(step.planet))
       stage = %{action: step.action, planet: step.planet, effective_mass: effective_mass, fuel: fuel}
       %Result{total_fuel: result.total_fuel + fuel, steps: [stage | result.steps]}
     end)

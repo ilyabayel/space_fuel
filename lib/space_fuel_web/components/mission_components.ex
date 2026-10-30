@@ -3,10 +3,7 @@ defmodule SpaceFuelWeb.MissionComponents do
   use SpaceFuelWeb, :html
 
   alias Phoenix.HTML.Form
-  alias SpaceFuel.Missions.Maneuver
-  alias SpaceFuel.Missions.Mission
-  alias SpaceFuel.Missions.Planet
-  alias SpaceFuel.Missions.Presets
+  alias SpaceFuel.Missions
 
   attr :form, Form, required: true
   attr :result, :any, required: true
@@ -70,7 +67,7 @@ defmodule SpaceFuelWeb.MissionComponents do
       </div>
       <div class="presets">
         <button
-          :for={item <- Presets.all()}
+          :for={item <- Missions.presets()}
           type="button"
           id={"preset-#{item.id}"}
           phx-click="preset"
@@ -78,7 +75,7 @@ defmodule SpaceFuelWeb.MissionComponents do
           class={["preset", @preset == item.id && "active"]}
           aria-pressed={to_string(@preset == item.id)}
         >
-          <span class={["preset-orb", "orb-#{item.id}"]} aria-hidden="true">{item.icon}</span><span class="preset-copy"><strong>{item.name}</strong><small>{Presets.route_description(
+          <span class={["preset-orb", "orb-#{item.id}"]} aria-hidden="true">{item.icon}</span><span class="preset-copy"><strong>{item.name}</strong><small>{Missions.preset_route_description(
             item
           )}</small></span><span class="preset-radio" aria-hidden="true"></span>
         </button>
@@ -122,7 +119,7 @@ defmodule SpaceFuelWeb.MissionComponents do
             field={@form[:mass]}
             type="number"
             min="1"
-            max={Mission.max_mass()}
+            max={Missions.max_mass()}
             step="1"
             label="SPACECRAFT MASS"
             class="mass-input"
@@ -150,13 +147,13 @@ defmodule SpaceFuelWeb.MissionComponents do
                   field={step[:action]}
                   type="select"
                   label="MANEUVER"
-                  options={Maneuver.options()}
+                  options={Missions.maneuver_options()}
                   class="step-select"
                 /><.input
                   field={step[:planet]}
                   type="select"
                   label="PLANET"
-                  options={Planet.options()}
+                  options={Missions.planet_options()}
                   class="step-select"
                 />
               </div>
@@ -180,7 +177,7 @@ defmodule SpaceFuelWeb.MissionComponents do
           value="new"
           id="add-step"
           disabled={
-            length(Ecto.Changeset.get_field(@form.source, :steps) || []) >= Mission.max_steps()
+            length(Ecto.Changeset.get_field(@form.source, :steps) || []) >= Missions.max_steps()
           }
           class="add-step"
         ><.icon name="hero-plus" class="size-4" /> Add flight stage</button>
@@ -239,7 +236,7 @@ defmodule SpaceFuelWeb.MissionComponents do
               "planet-dot",
               "planet-#{step.planet}"
             ]}></span><div class="stage-name">
-              <strong>{Maneuver.label(step.action)} {Planet.label(step.planet)}</strong><small>Effective mass · {format_number(
+              <strong>{Missions.maneuver_label(step.action)} {Missions.planet_label(step.planet)}</strong><small>Effective mass · {format_number(
                 step.effective_mass
               )} kg</small>
             </div><div class="stage-fuel">
@@ -307,7 +304,7 @@ defmodule SpaceFuelWeb.MissionComponents do
                   <span :if={index > 1} class="visual-connector" aria-hidden="true"><span>›</span></span>
                   <span class="visual-stage-number">{index}</span>
                   <span class={["visual-planet", "visual-planet-#{step.planet}"]} aria-hidden="true"><span></span></span>
-                  <strong>{Maneuver.label(step.action)} {Planet.label(step.planet)}</strong>
+                  <strong>{Missions.maneuver_label(step.action)} {Missions.planet_label(step.planet)}</strong>
                   <span class="visual-stage-caption">STAGE {String.pad_leading(
                     to_string(index),
                     2,

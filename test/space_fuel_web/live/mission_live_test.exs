@@ -3,13 +3,12 @@ defmodule SpaceFuelWeb.MissionLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias SpaceFuel.Missions.Maneuver
-  alias SpaceFuel.Missions.Planet
+  alias SpaceFuel.Missions
 
   test "flight step dropdowns expose the domain options", %{conn: conn} do
     {:ok, view, _} = live(conn, ~p"/")
 
-    for {label, action} <- Maneuver.options() do
+    for {label, action} <- Missions.maneuver_options() do
       assert has_element?(
                view,
                "#mission-form #flight-steps select[name$='[action]'] option[value='#{action}']",
@@ -17,7 +16,7 @@ defmodule SpaceFuelWeb.MissionLiveTest do
              )
     end
 
-    for {label, planet} <- Planet.options() do
+    for {label, planet} <- Missions.planet_options() do
       assert has_element?(
                view,
                "#mission-form #flight-steps select[name$='[planet]'] option[value='#{planet}']",

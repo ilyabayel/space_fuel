@@ -4,9 +4,7 @@ defmodule SpaceFuelWeb.MissionLive do
 
   import SpaceFuelWeb.MissionComponents
 
-  alias SpaceFuel.Missions.FuelCalculator
-  alias SpaceFuel.Missions.Mission
-  alias SpaceFuel.Missions.Presets
+  alias SpaceFuel.Missions
 
   def render(assigns) do
     ~H"""
@@ -31,9 +29,9 @@ defmodule SpaceFuelWeb.MissionLive do
         _ -> nil
       end
 
-    changeset = Mission.changeset(%Mission{}, attrs)
+    changeset = Missions.change_mission(attrs)
 
-    case Mission.input_error(changeset) do
+    case Missions.input_error(changeset) do
       nil ->
         {:noreply,
          socket |> assign(:preset, "custom") |> assign(:mission_name, "Custom mission") |> update_mission(changeset, true)}
@@ -44,7 +42,7 @@ defmodule SpaceFuelWeb.MissionLive do
   end
 
   def handle_event("preset", %{"name" => name}, socket) do
-    case Presets.fetch(name) do
+    case Missions.get_preset(name) do
       nil -> {:noreply, socket}
       _preset -> {:noreply, load_preset(socket, name)}
     end
@@ -54,21 +52,21 @@ defmodule SpaceFuelWeb.MissionLive do
   def handle_event(_, _, socket), do: {:noreply, socket}
 
   defp load_preset(socket, key) do
-    preset = Presets.fetch(key)
+    preset = Missions.get_preset(key)
 
     params = %{
       "mass" => preset.mass,
       "steps" => Enum.map(preset.steps, fn {action, planet} -> %{"action" => action, "planet" => planet} end)
     }
 
-    changeset = Mission.changeset(%Mission{}, params)
+    changeset = Missions.change_mission(params)
     socket |> assign(:preset, key) |> assign(:mission_name, preset.name) |> update_mission(changeset, false)
   end
 
   defp update_mission(socket, changeset, validate?) do
     result =
       if changeset.valid?,
-        do: changeset |> Ecto.Changeset.apply_changes() |> then(&FuelCalculator.calculate(&1.mass, &1.steps))
+        do: Missions.calculate_mission(changeset)
 
     changeset = if validate?, do: Map.put(changeset, :action, :validate), else: changeset
     socket |> assign(:form, to_form(changeset)) |> assign(:result, result) |> assign(:rejection, nil)

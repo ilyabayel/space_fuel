@@ -1,4 +1,4 @@
-defmodule SpaceFuel.Missions.Planet do
+defmodule SpaceFuel.Missions.Catalogs.Planet do
   @moduledoc """
   Supported planets, in display order, and their gravity values.
 

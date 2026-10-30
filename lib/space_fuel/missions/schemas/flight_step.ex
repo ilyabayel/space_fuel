@@ -1,11 +1,11 @@
-defmodule SpaceFuel.Missions.FlightStep do
-  @moduledoc "An embedded flight stage with a generated UUID and validated catalog identifiers."
+defmodule SpaceFuel.Missions.Schemas.FlightStep do
+  @moduledoc "An embedded flight stage with a generated UUID and catalog identifiers."
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias SpaceFuel.Missions.Maneuver
-  alias SpaceFuel.Missions.Planet
+  alias SpaceFuel.Missions.Catalogs.Maneuver
+  alias SpaceFuel.Missions.Catalogs.Planet
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do

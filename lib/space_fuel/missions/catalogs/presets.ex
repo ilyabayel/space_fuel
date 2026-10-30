@@ -1,7 +1,7 @@
-defmodule SpaceFuel.Missions.Presets do
+defmodule SpaceFuel.Missions.Catalogs.Presets do
   @moduledoc "Ordered reference missions and their picker metadata."
 
-  alias SpaceFuel.Missions.Planet
+  alias SpaceFuel.Missions.Catalogs.Planet
 
   @presets [
     %{

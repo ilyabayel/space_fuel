@@ -1,12 +1,11 @@
-defmodule SpaceFuel.Missions.Maneuver do
+defmodule SpaceFuel.Missions.Catalogs.Maneuver do
   @moduledoc """
-  Supported maneuvers and their recursive, integer-only fuel calculations.
+  Supported maneuver labels and scaled formula parameters.
 
   Each formula is `{coefficient, offset}`. Coefficients are scaled by 1,000
   (42 represents 0.042), gravity is scaled by 1,000, and offsets are kilograms.
-  Dividing the product by 1,000,000 floors each fuel increment before the offset
-  is subtracted. Positive increments also need fuel; recursion stops when the
-  next increment is nonpositive.
+  The calculation service divides the product by 1,000,000 and floors each
+  increment before subtracting the offset.
 
   Add a formula to `@maneuvers` to expose it to calculation, validation, and
   form dropdowns. Supported planet/formula combinations must produce shrinking
@@ -20,7 +19,6 @@ defmodule SpaceFuel.Missions.Maneuver do
   ]
   @options Enum.map(@maneuvers, fn {id, label, _formula} -> {label, id} end)
   @formulas Map.new(@maneuvers, fn {id, _label, formula} -> {id, formula} end)
-  @scale 1_000_000
 
   @labels Map.new(@options, fn {label, id} -> {id, label} end)
 
@@ -32,14 +30,6 @@ defmodule SpaceFuel.Missions.Maneuver do
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options
 
-  @doc "Returns fuel in kilograms, including the fuel needed to carry fuel."
-  @spec fuel_required(String.t(), non_neg_integer(), pos_integer()) :: non_neg_integer()
-  def fuel_required(action, mass, gravity) do
-    fuel_for(mass, gravity, Map.fetch!(@formulas, action), 0)
-  end
-
-  defp fuel_for(mass, gravity, {coefficient, offset} = formula, total) do
-    increment = div(mass * gravity * coefficient, @scale) - offset
-    if increment > 0, do: fuel_for(increment, gravity, formula, total + increment), else: total
-  end
+  @doc "Returns the scaled formula for a supported maneuver."
+  def formula(action), do: Map.fetch!(@formulas, action)
 end

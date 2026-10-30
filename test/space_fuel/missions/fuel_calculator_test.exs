@@ -1,8 +1,8 @@
 defmodule SpaceFuel.Missions.FuelCalculatorTest do
   use ExUnit.Case, async: true
 
-  alias SpaceFuel.Missions.FlightStep
-  alias SpaceFuel.Missions.FuelCalculator
+  alias SpaceFuel.Missions
+  alias SpaceFuel.Missions.Schemas.FlightStep
 
   defp steps(pairs), do: Enum.map(pairs, fn {action, planet} -> %{action: action, planet: planet} end)
   @apollo [{"launch", "earth"}, {"land", "moon"}, {"launch", "moon"}, {"land", "earth"}]
@@ -20,41 +20,41 @@ defmodule SpaceFuel.Missions.FuelCalculatorTest do
     scenarios = [{28_801, @apollo, 51_898}, {14_606, @mars, 33_388}, {75_432, @passenger, 212_161}]
 
     for {mass, route, expected} <- scenarios do
-      result = FuelCalculator.calculate(mass, steps(route))
+      result = Missions.calculate_fuel(mass, steps(route))
       assert result.total_fuel == expected
       assert Enum.sum(Enum.map(result.steps, & &1.fuel)) == expected
       assert Enum.map(result.steps, &{&1.action, &1.planet}) == route
     end
 
-    assert List.last(FuelCalculator.calculate(28_801, steps(@apollo)).steps).fuel == 13_447
+    assert List.last(Missions.calculate_fuel(28_801, steps(@apollo)).steps).fuel == 13_447
   end
 
   test "empty and small stages terminate without negative fuel" do
-    assert FuelCalculator.calculate(1, []).total_fuel == 0
+    assert Missions.calculate_fuel(1, []).total_fuel == 0
 
     for action <- ~w(launch land), planet <- ~w(earth moon mars) do
-      assert FuelCalculator.calculate(1, steps([{action, planet}])).total_fuel == 0
+      assert Missions.calculate_fuel(1, steps([{action, planet}])).total_fuel == 0
     end
   end
 
   test "arbitrary order is preserved and fuel is monotonic" do
     route = steps([{"land", "earth"}, {"land", "mars"}, {"launch", "earth"}, {"launch", "earth"}])
-    low = FuelCalculator.calculate(1_000, route)
-    high = FuelCalculator.calculate(1_001, route)
+    low = Missions.calculate_fuel(1_000, route)
+    high = Missions.calculate_fuel(1_001, route)
     assert Enum.map(low.steps, &{&1.action, &1.planet}) == Enum.map(route, &{&1.action, &1.planet})
     assert high.total_fuel >= low.total_fuel
     assert Enum.all?(low.steps, &(&1.fuel >= 0))
-    assert low == FuelCalculator.calculate(1_000, route)
+    assert low == Missions.calculate_fuel(1_000, route)
   end
 
   test "floor boundary for a single landing" do
-    assert FuelCalculator.calculate(132, steps([{"land", "earth"}])).total_fuel == 0
-    assert FuelCalculator.calculate(133, steps([{"land", "earth"}])).total_fuel == 1
+    assert Missions.calculate_fuel(132, steps([{"land", "earth"}])).total_fuel == 0
+    assert Missions.calculate_fuel(133, steps([{"land", "earth"}])).total_fuel == 1
   end
 
   test "each stage carries the fuel required by every later stage" do
     mass = 28_801
-    result = FuelCalculator.calculate(mass, steps(@apollo))
+    result = Missions.calculate_fuel(mass, steps(@apollo))
 
     for {stage, index} <- Enum.with_index(result.steps) do
       later_fuel = result.steps |> Enum.drop(index + 1) |> Enum.map(& &1.fuel) |> Enum.sum()
@@ -66,6 +66,6 @@ defmodule SpaceFuel.Missions.FuelCalculatorTest do
     route = steps(@apollo)
     embedded_route = Enum.map(route, &struct!(FlightStep, &1))
 
-    assert FuelCalculator.calculate(28_801, embedded_route) == FuelCalculator.calculate(28_801, route)
+    assert Missions.calculate_fuel(28_801, embedded_route) == Missions.calculate_fuel(28_801, route)
   end
 end
