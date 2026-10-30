@@ -19,15 +19,16 @@ defmodule SpaceFuelWeb.ConnCase do
 
   using do
     quote do
-      # The default endpoint for testing
-      @endpoint SpaceFuelWeb.Endpoint
-
       use SpaceFuelWeb, :verified_routes
+
+      import Phoenix.ConnTest
 
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
       import SpaceFuelWeb.ConnCase
+
+      # The default endpoint for testing
+      @endpoint SpaceFuelWeb.Endpoint
     end
   end
 
