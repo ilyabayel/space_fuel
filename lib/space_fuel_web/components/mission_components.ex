@@ -75,7 +75,15 @@ defmodule SpaceFuelWeb.MissionComponents do
           class={["preset", @preset == item.id && "active"]}
           aria-pressed={to_string(@preset == item.id)}
         >
-          <span class={["preset-orb", "orb-#{item.id}"]} aria-hidden="true">{item.icon}</span><span class="preset-copy"><strong>{item.name}</strong><small>{Missions.get_preset_route_description(
+          <span
+            class={["preset-images", length(item.planets) > 1 && "preset-images-pair"]}
+            aria-hidden="true"
+          >
+            <span
+              :for={planet <- item.planets}
+              class={["visual-planet", "visual-planet-#{planet}"]}
+            ></span>
+          </span><span class="preset-copy"><strong>{item.name}</strong><small>{Missions.get_preset_route_description(
             item
           )}</small></span><span class="preset-radio" aria-hidden="true"></span>
         </button>

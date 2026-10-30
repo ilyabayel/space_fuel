@@ -334,27 +334,28 @@ h1 span {
   box-shadow: inset 0 0 0 1px #2ba4ff33;
 }
 
-.preset-orb {
+.preset-images {
   width: 43px;
   height: 43px;
   flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 25px;
-  color: #bce5ff;
-  background: radial-gradient(circle at 35% 30%, #75bbec, #1b537c 45%, #0a1d31 75%);
-  box-shadow: 0 0 18px #2788d533;
+  display: flex;
+  align-items: center;
 }
 
-.orb-mars {
-  color: #ffd3b0;
-  background: radial-gradient(circle at 35% 30%, #e8ab7e, #8c4731 50%, #291c1b 78%);
+.preset-images .visual-planet {
+  width: 43px;
+  height: 43px;
+  margin: 0;
 }
 
-.orb-passenger {
-  background: #162c40;
-  border: 1px solid #36546c;
+.preset-images-pair .visual-planet {
+  width: 32px;
+  height: 32px;
+}
+
+.preset-images-pair .visual-planet + .visual-planet {
+  margin-left: -19px;
+  margin-top: 17px;
 }
 
 .preset-copy {

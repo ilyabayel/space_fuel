@@ -7,21 +7,21 @@ defmodule SpaceFuel.Missions.Catalogs.Presets do
     %{
       id: "apollo",
       name: "Apollo 11",
-      icon: "◉",
+      planets: ["moon"],
       mass: 28_801,
       steps: [{"launch", "earth"}, {"land", "moon"}, {"launch", "moon"}, {"land", "earth"}]
     },
     %{
       id: "mars",
       name: "Mars Mission",
-      icon: "◍",
+      planets: ["mars"],
       mass: 14_606,
       steps: [{"launch", "earth"}, {"land", "mars"}, {"launch", "mars"}, {"land", "earth"}]
     },
     %{
       id: "passenger",
       name: "Passenger Ship",
-      icon: "✦",
+      planets: ["moon", "mars"],
       mass: 75_432,
       steps: [
         {"launch", "earth"},
