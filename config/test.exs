@@ -17,11 +17,8 @@ config :phoenix_live_view,
 # Browser-based E2E tests
 config :phoenix_test, otp_app: :space_fuel
 
-# We don't run a server during test. If one is required,
-# you can enable the server option below.
+# The listener is enabled only for browser tests.
 config :space_fuel, SpaceFuelWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "uS+i0ipgo+gcRFpgs7lMA8LAAxD31OjN5oQBq9ToSLnNAZlV9ouIWNnCJYy2vMbn",
-  server: false
-
-config :space_fuel, SpaceFuelWeb.Endpoint, server: true
+  server: System.get_env("E2E") == "1"

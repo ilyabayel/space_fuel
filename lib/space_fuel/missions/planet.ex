@@ -15,6 +15,12 @@ defmodule SpaceFuel.Missions.Planet do
   @options Enum.map(@planets, fn {id, label, _gravity} -> {label, id} end)
   @gravity Map.new(@planets, fn {id, _label, gravity} -> {id, gravity} end)
 
+  @labels Map.new(@options, fn {label, id} -> {id, label} end)
+
+  @doc "Returns the display label for a supported identifier."
+  @spec label(String.t()) :: String.t()
+  def label(id), do: Map.fetch!(@labels, id)
+
   @doc "Returns display labels and string identifiers in planet display order."
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options

@@ -16,11 +16,18 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
-if System.get_env("PHX_SERVER") do
+if config_env() != :test and System.get_env("PHX_SERVER") do
   config :space_fuel, SpaceFuelWeb.Endpoint, server: true
 end
 
-config :space_fuel, SpaceFuelWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+if config_env() == :test do
+  if System.get_env("E2E") == "1" do
+    port = String.to_integer(System.get_env("E2E_PORT", "4002"))
+    config :space_fuel, SpaceFuelWeb.Endpoint, http: [port: port], url: [host: "127.0.0.1", port: port]
+  end
+else
+  config :space_fuel, SpaceFuelWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+end
 
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
@@ -64,6 +71,12 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0}
     ],
     secret_key_base: secret_key_base
+
+  config :space_fuel,
+         :csp_report_only,
+         "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; " <>
+           "frame-ancestors 'self'; form-action 'self'; connect-src 'self' wss://#{host}; " <>
+           "img-src 'self' data:; style-src 'self' 'unsafe-inline'"
 
   config :space_fuel, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 

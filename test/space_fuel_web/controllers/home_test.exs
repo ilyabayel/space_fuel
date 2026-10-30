@@ -1,4 +1,4 @@
-defmodule SpaceFuelWeb.PageControllerTest do
+defmodule SpaceFuelWeb.HomeTest do
   use SpaceFuelWeb.ConnCase
 
   test "GET /", %{conn: conn} do

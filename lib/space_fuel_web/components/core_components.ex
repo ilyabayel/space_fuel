@@ -206,6 +206,8 @@ defmodule SpaceFuelWeb.CoreComponents do
   end
 
   def input(%{type: "checkbox"} = assigns) do
+    assigns = assign_error_attributes(assigns)
+
     assigns =
       assign_new(assigns, :checked, fn ->
         Form.normalize_value("checkbox", assigns[:value])
@@ -233,12 +235,16 @@ defmodule SpaceFuelWeb.CoreComponents do
           />{@label}
         </span>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={"#{@id}-errors"}>
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
 
   def input(%{type: "select"} = assigns) do
+    assigns = assign_error_attributes(assigns)
+
     ~H"""
     <div class="fieldset mb-2">
       <label for={@id}>
@@ -254,12 +260,16 @@ defmodule SpaceFuelWeb.CoreComponents do
           {Phoenix.HTML.Form.options_for_select(@options, @value)}
         </select>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={"#{@id}-errors"}>
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
 
   def input(%{type: "textarea"} = assigns) do
+    assigns = assign_error_attributes(assigns)
+
     ~H"""
     <div class="fieldset mb-2">
       <label for={@id}>
@@ -274,13 +284,17 @@ defmodule SpaceFuelWeb.CoreComponents do
           {@rest}
         >{Form.normalize_value("textarea", @value)}</textarea>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={"#{@id}-errors"}>
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
+    assigns = assign_error_attributes(assigns)
+
     ~H"""
     <div class="fieldset mb-2">
       <label for={@id}>
@@ -297,9 +311,31 @@ defmodule SpaceFuelWeb.CoreComponents do
           {@rest}
         />
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={"#{@id}-errors"}>
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
+  end
+
+  defp assign_error_attributes(assigns) do
+    id = assigns.id || assigns.name
+    rest = assigns.rest
+
+    rest =
+      if assigns.errors == [] do
+        rest
+      else
+        description = Map.get(rest, :"aria-describedby") || Map.get(rest, "aria-describedby")
+        describedby = Enum.join(Enum.reject([description, "#{id}-errors"], &is_nil/1), " ")
+
+        rest
+        |> Map.delete("aria-describedby")
+        |> Map.put(:"aria-describedby", describedby)
+        |> Map.put(:"aria-invalid", "true")
+      end
+
+    assign(assigns, id: id, rest: rest)
   end
 
   # Helper used by inputs to generate form errors

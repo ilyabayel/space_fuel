@@ -11,13 +11,15 @@ mix setup
 mix phx.server
 ```
 
-Open http://localhost:4000. Run the test suite with `mix test`, or the project checks with `mix precommit`.
+Open http://localhost:4000. Run the fast test suite with `mix test`, or the project checks with `mix precommit`. The fast suite does not start an HTTP listener.
+
+For browser tests, install dependencies with `npm --prefix assets install` and `npm --prefix assets exec -- playwright install chromium`, build assets with `mix assets.build`, then run `E2E=1 mix test`. The browser suite binds `127.0.0.1:4002`; set `E2E_PORT` to use a different port.
 
 ## How it works
 
 `Mission` and `FlightStep` validate the form. The pure domain modules are independent of Phoenix and Ecto: `Planet` owns gravity, `Maneuver` owns formulas and recursive fuel calculation, and `FuelCalculator` accumulates the mission's fuel. The LiveView calculates only valid missions. Each maneuver is evaluated backwards from the end of the route: its effective mass is the spacecraft dry mass plus the fuel needed for every later maneuver. The fuel needed to carry each fuel increment is calculated recursively until the next increment is nonpositive. Results are presented in flight order.
 
-Gravity and formula coefficients are scaled integers, avoiding floating-point rounding. Spacecraft mass must be a positive integer number of kilograms, including for an empty route. Empty routes require zero fuel. Any sequence of supported launches and landings is accepted; the planner does not impose physical route constraints.
+Gravity and formula coefficients are scaled integers, avoiding floating-point rounding. Spacecraft mass must be a positive integer number of kilograms up to 999,999,999,999 (at most 12 input characters), including for an empty route. Routes can contain at most 50 stages. Empty routes require zero fuel. Any sequence of supported launches and landings is accepted; the planner does not impose physical route constraints.
 
 `Planet.gravity/1` returns m/s² scaled by 1,000, so Earth's 9.807 is stored as 9,807. `Maneuver.fuel_required/3` takes an action identifier, integer mass in kilograms, and scaled gravity. Formula coefficients are also scaled by 1,000 (42 means 0.042); dividing the product by 1,000,000 floors each increment before subtracting the offset in kilograms. `FuelCalculator.calculate/2` keeps the existing mass-and-steps interface and returns a `Result` with total fuel and the stage breakdown. Calculation functions assume validated inputs; changesets handle user input validation.
 
@@ -32,3 +34,7 @@ The included reference missions produce:
 ## Limitations
 
 This is a simplified fuel model, not an orbital mechanics simulation. Missions are not persisted: refreshing the page restores Apollo 11. LiveView form recovery restores an in-progress form after a connection interruption while the browser page remains open.
+
+## Content Security Policy
+
+Production sends the existing enforced base/frame restrictions and a stricter report-only policy. Check browser developer tools for Content Security Policy violations while testing the deployed application, including reconnection and assets. No reporting endpoint is configured. After observing the policy in the intended deployment and resolving violations, promote the candidate policy to enforcement in a separate change.

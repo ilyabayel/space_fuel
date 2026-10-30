@@ -12,13 +12,16 @@ defmodule SpaceFuel.Missions.FuelCalculator do
   alias SpaceFuel.Missions.Planet
   alias SpaceFuel.Missions.Result
 
+  @type step_input ::
+          %{required(:action) => String.t(), required(:planet) => String.t()} | SpaceFuel.Missions.FlightStep.t()
+
   @doc """
   Calculates fuel for a positive integer dry mass in kilograms and ordered steps.
 
   Steps may be maps or `FlightStep` structs with supported string `action` and
   `planet` fields. An empty route requires zero fuel.
   """
-  @spec calculate(pos_integer(), [map()]) :: Result.t()
+  @spec calculate(pos_integer(), [step_input()]) :: Result.t()
   def calculate(mass, steps) do
     steps
     |> Enum.reverse()

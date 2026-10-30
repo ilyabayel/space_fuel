@@ -6,65 +6,71 @@ defmodule SpaceFuelWeb.MissionLive do
 
   alias SpaceFuel.Missions.FuelCalculator
   alias SpaceFuel.Missions.Mission
-
-  @presets %{
-    "apollo" => {"Apollo 11", 28_801, [{"launch", "earth"}, {"land", "moon"}, {"launch", "moon"}, {"land", "earth"}]},
-    "mars" => {"Mars Mission", 14_606, [{"launch", "earth"}, {"land", "mars"}, {"launch", "mars"}, {"land", "earth"}]},
-    "passenger" =>
-      {"Passenger Ship", 75_432,
-       [
-         {"launch", "earth"},
-         {"land", "moon"},
-         {"launch", "moon"},
-         {"land", "mars"},
-         {"launch", "mars"},
-         {"land", "earth"}
-       ]}
-  }
+  alias SpaceFuel.Missions.Presets
 
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.dashboard form={@form} result={@result} preset={@preset} mission_name={@mission_name} />
+      <.dashboard
+        form={@form}
+        result={@result}
+        preset={@preset}
+        mission_name={@mission_name}
+        rejection={@rejection}
+      />
     </Layouts.app>
     """
   end
 
   def mount(_params, _session, socket), do: {:ok, load_preset(socket, "apollo")}
 
-  def handle_event("validate", %{"mission" => params}, socket) when is_map(params) do
-    {:noreply,
-     socket |> assign(:preset, "custom") |> assign(:mission_name, "Custom mission") |> update_mission(params, true)}
-  rescue
-    Ecto.CastError -> {:noreply, socket}
-    ArgumentError -> {:noreply, socket}
+  def handle_event("validate", params, socket) do
+    attrs =
+      case params do
+        %{"mission" => mission} -> mission
+        _ -> nil
+      end
+
+    changeset = Mission.changeset(%Mission{}, attrs)
+
+    case Mission.input_error(changeset) do
+      nil ->
+        {:noreply,
+         socket |> assign(:preset, "custom") |> assign(:mission_name, "Custom mission") |> update_mission(changeset, true)}
+
+      message ->
+        {:noreply, assign(socket, result: nil, rejection: message)}
+    end
   end
 
-  def handle_event("preset", %{"name" => name}, socket) when is_map_key(@presets, name),
-    do: {:noreply, load_preset(socket, name)}
+  def handle_event("preset", %{"name" => name}, socket) do
+    case Presets.fetch(name) do
+      nil -> {:noreply, socket}
+      _preset -> {:noreply, load_preset(socket, name)}
+    end
+  end
 
   def handle_event("reset", _, socket), do: {:noreply, load_preset(socket, "apollo")}
   def handle_event(_, _, socket), do: {:noreply, socket}
 
   defp load_preset(socket, key) do
-    {name, mass, steps} = Map.fetch!(@presets, key)
+    preset = Presets.fetch(key)
 
     params = %{
-      "mass" => mass,
-      "steps" => Enum.map(steps, fn {action, planet} -> %{"action" => action, "planet" => planet} end)
+      "mass" => preset.mass,
+      "steps" => Enum.map(preset.steps, fn {action, planet} -> %{"action" => action, "planet" => planet} end)
     }
 
-    socket |> assign(:preset, key) |> assign(:mission_name, name) |> update_mission(params, false)
+    changeset = Mission.changeset(%Mission{}, params)
+    socket |> assign(:preset, key) |> assign(:mission_name, preset.name) |> update_mission(changeset, false)
   end
 
-  defp update_mission(socket, params, validate?) do
-    changeset = Mission.changeset(%Mission{}, params)
-
+  defp update_mission(socket, changeset, validate?) do
     result =
       if changeset.valid?,
         do: changeset |> Ecto.Changeset.apply_changes() |> then(&FuelCalculator.calculate(&1.mass, &1.steps))
 
     changeset = if validate?, do: Map.put(changeset, :action, :validate), else: changeset
-    socket |> assign(:form, to_form(changeset)) |> assign(:result, result)
+    socket |> assign(:form, to_form(changeset)) |> assign(:result, result) |> assign(:rejection, nil)
   end
 end

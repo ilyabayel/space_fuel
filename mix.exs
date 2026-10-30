@@ -44,7 +44,6 @@ defmodule SpaceFuel.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.16", only: [:dev, :test], runtime: false},
-      {:stream_data, "~> 1.4", only: :test},
       {:phoenix_test, "~> 0.12", only: :test},
       {:phoenix_test_playwright, "~> 0.19", only: :test, runtime: false},
       {:ecto, "~> 3.12"},
@@ -81,6 +80,7 @@ defmodule SpaceFuel.MixProject do
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind space_fuel", "esbuild space_fuel"],
       "assets.deploy": [
+        "compile",
         "tailwind space_fuel --minify",
         "esbuild space_fuel --minify",
         "phx.digest"

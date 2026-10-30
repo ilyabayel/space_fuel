@@ -22,6 +22,12 @@ defmodule SpaceFuel.Missions.Maneuver do
   @formulas Map.new(@maneuvers, fn {id, _label, formula} -> {id, formula} end)
   @scale 1_000_000
 
+  @labels Map.new(@options, fn {label, id} -> {id, label} end)
+
+  @doc "Returns the display label for a supported identifier."
+  @spec label(String.t()) :: String.t()
+  def label(id), do: Map.fetch!(@labels, id)
+
   @doc "Returns display labels and string identifiers in maneuver display order."
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options

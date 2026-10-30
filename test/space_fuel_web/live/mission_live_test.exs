@@ -95,6 +95,70 @@ defmodule SpaceFuelWeb.MissionLiveTest do
     {:ok, view, _} = live(conn, ~p"/")
     render_hook(view, "preset", %{"name" => "unsupported"})
     render_hook(view, "validate", %{"mission" => "malformed"})
+    assert has_element?(view, "#mission-rejection", "malformed")
+    assert has_element?(view, "#result-unavailable")
+    view |> form("#mission-form", mission: %{mass: "28801"}) |> render_change()
     assert has_element?(view, "#fuel-result", "51,898")
+  end
+
+  test "malformed nested events are rejected and the session remains usable", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/")
+
+    for params <- [
+          nil,
+          %{"mass" => %{}},
+          %{"mass" => "1000", "steps" => [["bad"]]},
+          %{"mass" => "1000", "steps" => [%{"action" => %{}, "planet" => "earth"}]},
+          %{"mass" => "1000", "steps" => "bad"},
+          %{"mass" => "1000", "steps_sort" => List.duplicate("new", 51)}
+        ] do
+      render_hook(view, "validate", %{"mission" => params})
+      assert has_element?(view, "#mission-rejection")
+      assert has_element?(view, "#mission_mass[value='28801']")
+      assert has_element?(view, "#result-unavailable")
+      view |> form("#mission-form", mission: %{mass: "28801"}) |> render_change()
+      assert has_element?(view, "#fuel-result", "51,898")
+    end
+  end
+
+  test "validation messages and preset selection are exposed to assistive technology", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/")
+    assert has_element?(view, "#preset-apollo[aria-pressed=true]")
+    view |> form("#mission-form", mission: %{mass: "0"}) |> render_change()
+    assert has_element?(view, "#mission_mass[aria-invalid=true][aria-describedby=mission_mass-errors]")
+    assert has_element?(view, "#mission_mass-errors", "must be greater than 0")
+    refute has_element?(view, ".preset[aria-pressed=true]")
+  end
+
+  test "the maximum route disables adding, and duplicate IDs have a visible explanation", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/")
+    row = %{"action" => "launch", "planet" => "earth"}
+    route = Map.new(0..49, &{to_string(&1), row})
+    render_hook(view, "validate", %{"mission" => %{"mass" => "999999999999", "steps" => route}})
+    assert has_element?(view, "#add-step[disabled]")
+    assert has_element?(view, "#result-step-50")
+    id = Ecto.UUID.generate()
+
+    duplicate = [
+      %{"id" => id, "action" => "launch", "planet" => "earth"},
+      %{"id" => id, "action" => "land", "planet" => "moon"}
+    ]
+
+    render_hook(view, "validate", %{"mission" => %{"mass" => "1000", "steps" => duplicate}})
+    assert has_element?(view, "#mission-rejection", "identifiers are invalid or duplicated")
+    assert has_element?(view, "#result-unavailable")
+    view |> element("#reset-mission") |> render_click()
+    assert has_element?(view, "#fuel-result", "51,898")
+  end
+
+  test "invalid selections identify their messages", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/")
+
+    render_hook(view, "validate", %{
+      "mission" => %{"mass" => "1000", "steps" => [%{"action" => "fly", "planet" => "earth"}]}
+    })
+
+    assert has_element?(view, "select[aria-invalid=true][aria-describedby$='-errors']")
+    assert has_element?(view, "#mission_steps_0_action-errors", "is invalid")
   end
 end

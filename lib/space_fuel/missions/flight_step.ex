@@ -1,5 +1,5 @@
 defmodule SpaceFuel.Missions.FlightStep do
-  @moduledoc false
+  @moduledoc "An embedded flight stage with a generated UUID and validated catalog identifiers."
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -13,6 +13,10 @@ defmodule SpaceFuel.Missions.FlightStep do
     field(:planet, :string)
   end
 
+  @type t :: %__MODULE__{}
+
+  @doc "Validates stage attributes and generates an ID when one is absent."
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(step, attrs) do
     step
     |> cast(attrs, [:id, :action, :planet])
