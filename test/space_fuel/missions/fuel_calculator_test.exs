@@ -1,6 +1,7 @@
 defmodule SpaceFuel.Missions.FuelCalculatorTest do
   use ExUnit.Case, async: true
 
+  alias SpaceFuel.Missions.FlightStep
   alias SpaceFuel.Missions.FuelCalculator
 
   defp steps(pairs), do: Enum.map(pairs, fn {action, planet} -> %{action: action, planet: planet} end)
@@ -49,5 +50,22 @@ defmodule SpaceFuel.Missions.FuelCalculatorTest do
   test "floor boundary for a single landing" do
     assert FuelCalculator.calculate(132, steps([{"land", "earth"}])).total_fuel == 0
     assert FuelCalculator.calculate(133, steps([{"land", "earth"}])).total_fuel == 1
+  end
+
+  test "each stage carries the fuel required by every later stage" do
+    mass = 28_801
+    result = FuelCalculator.calculate(mass, steps(@apollo))
+
+    for {stage, index} <- Enum.with_index(result.steps) do
+      later_fuel = result.steps |> Enum.drop(index + 1) |> Enum.map(& &1.fuel) |> Enum.sum()
+      assert stage.effective_mass == mass + later_fuel
+    end
+  end
+
+  test "maps and embedded flight steps produce identical results" do
+    route = steps(@apollo)
+    embedded_route = Enum.map(route, &struct!(FlightStep, &1))
+
+    assert FuelCalculator.calculate(28_801, embedded_route) == FuelCalculator.calculate(28_801, route)
   end
 end

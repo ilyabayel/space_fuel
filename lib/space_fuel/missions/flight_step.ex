@@ -4,6 +4,9 @@ defmodule SpaceFuel.Missions.FlightStep do
 
   import Ecto.Changeset
 
+  alias SpaceFuel.Missions.Maneuver
+  alias SpaceFuel.Missions.Planet
+
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field(:action, :string)
@@ -15,8 +18,8 @@ defmodule SpaceFuel.Missions.FlightStep do
     |> cast(attrs, [:id, :action, :planet])
     |> ensure_id()
     |> validate_required([:action, :planet])
-    |> validate_inclusion(:action, ~w(launch land))
-    |> validate_inclusion(:planet, ~w(earth moon mars))
+    |> validate_inclusion(:action, Enum.map(Maneuver.options(), &elem(&1, 1)))
+    |> validate_inclusion(:planet, Enum.map(Planet.options(), &elem(&1, 1)))
   end
 
   defp ensure_id(changeset) do

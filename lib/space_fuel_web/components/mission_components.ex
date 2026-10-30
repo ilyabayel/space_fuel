@@ -2,6 +2,9 @@ defmodule SpaceFuelWeb.MissionComponents do
   @moduledoc false
   use SpaceFuelWeb, :html
 
+  alias SpaceFuel.Missions.Maneuver
+  alias SpaceFuel.Missions.Planet
+
   attr :form, :any, required: true
   attr :result, :any, required: true
   attr :preset, :string, required: true
@@ -111,13 +114,13 @@ defmodule SpaceFuelWeb.MissionComponents do
                         field={step[:action]}
                         type="select"
                         label="MANEUVER"
-                        options={[{"Launch", "launch"}, {"Land", "land"}]}
+                        options={Maneuver.options()}
                         class="step-select"
                       /><.input
                         field={step[:planet]}
                         type="select"
                         label="PLANET"
-                        options={[{"Earth", "earth"}, {"Moon", "moon"}, {"Mars", "mars"}]}
+                        options={Planet.options()}
                         class="step-select"
                       />
                     </div>
