@@ -1,27 +1,34 @@
 # Project Phoenix, HEEx, and LiveView rules
 
-Moved from the repository root `AGENTS.md`. These remain project requirements
-for this repository and take precedence over community style preferences.
-
-### Phoenix v1.8 guidelines
+## Phoenix v1.8 layouts and scope
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
-- The `MyAppWeb.Layouts` module is aliased in the `my_app_web.ex` file, so you can use it without needing to alias it again
-- Anytime you run into errors with no `current_scope` assign:
-  - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
-  - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
+- `SpaceFuelWeb.Layouts` is aliased in `space_fuel_web.ex`; use the existing alias.
+- Diagnose a missing `current_scope` by tracing the assign from the router pipeline or LiveView
+  `on_mount` hook to the template and layout. With generated authentication, use the existing
+  scope-mounting/authentication hooks in the appropriate `live_session`, and pass the scope to
+  components that need it. Preserve the route's intended access policy.
+- This repository currently has no generated auth pipeline/hooks, and `Layouts.app` declares
+  `current_scope` with `default: nil`. Public views may omit that optional attribute. Add a scope
+  producer or change session boundaries only when the feature's access requirements call for it;
+  never suppress a missing scope on a protected route by substituting `nil`.
 - Phoenix v1.8 moved the `<.flash_group>` component to the `Layouts` module. You are **forbidden** from calling `<.flash_group>` outside of the `layouts.ex` module
 - Out of the box, `core_components.ex` imports an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for hero icons. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
 - **Always** use the imported `<.input>` component for form inputs from `core_components.ex` when available. `<.input>` is imported and using it will save steps and prevent errors
-- If you override the default input classes (`<.input class="myclass px-2 py-1 rounded-lg">)`) class with your own values, no default classes are inherited, so your
-custom classes must fully style the input
+- Check `core_components.ex` before overriding an input's classes. Its `class` attribute replaces
+  the base input classes, so supply complete base styling; the component may still add error
+  classes and wrapper/label styling. Configure `error_class` when that also needs to change.
+
+Source: [Phoenix scopes and their mounting hooks](https://phoenix.hexdocs.pm/scopes.html).
+Layout, icon, input, and flash placement are project conventions; inspect the local components.
 
 <!-- phoenix:phoenix-start -->
 ## Phoenix guidelines
 
 - Remember Phoenix router `scope` blocks include an optional alias which is prefixed for all routes within the scope. **Always** be mindful of this when creating routes within a scope to avoid duplicate module prefixes.
 
-- You **never** need to create your own `alias` for route definitions! The `scope` provides the alias, ie:
+- Inside a `scope` that supplies a module alias, use relative route module names rather than
+  duplicating that prefix. For example:
 
       scope "/admin", AppWeb.Admin do
         pipe_through :browser
@@ -41,7 +48,8 @@ custom classes must fully style the input
 - **Always** use the imported `Phoenix.Component.form/1` and `Phoenix.Component.inputs_for/1` function to build forms. **Never** use `Phoenix.HTML.form_for` or `Phoenix.HTML.inputs_for` as they are outdated
 - When building forms **always** use the already imported `Phoenix.Component.to_form/2` (`assign(socket, form: to_form(...))` and `<.form for={@form} id="msg-form">`), then access those forms in the template via `@form[:field]`
 - **Always** add unique DOM IDs to key elements (like forms, buttons, etc) when writing templates, these IDs can later be used in tests (`<.form for={@form} id="product-form">`)
-- For "app wide" template imports, you can import/alias into the `my_app_web.ex`'s `html_helpers` block, so they will be available to all LiveViews, LiveComponent's, and all modules that do `use MyAppWeb, :html` (replace "my_app" by the actual app name)
+- Put shared template imports/aliases in the `html_helpers` block of `space_fuel_web.ex`, so
+  modules using the corresponding `SpaceFuelWeb` definitions receive them.
 
 - Elixir supports `if/else` but **does NOT support `if/else if` or `if/elsif`**. **Never use `else if` or `elseif` in Elixir**, **always** use `cond` or `case` for multiple conditionals.
 
@@ -72,7 +80,8 @@ custom classes must fully style the input
 
   Within `phx-no-curly-interpolation` annotated tags, you can use `{` and `}` without escaping them, and dynamic Elixir expressions can still be used with `<%= ... %>` syntax
 
-- HEEx class attrs support lists, but you must **always** use list `[...]` syntax. You can use the class list syntax to conditionally add classes, **always do this for multiple class values**:
+- Use list syntax when combining conditional class values. Static class strings and expressions
+  returning a valid class value are also supported:
 
       <a class={[
         "px-2 text-white",
@@ -81,7 +90,7 @@ custom classes must fully style the input
         ...
       ]}>Text</a>
 
-  and **always** wrap `if`'s inside `{...}` expressions with parens, like done above (`if(@other_condition, do: "...", else: "...")`)
+  Let the configured formatter handle parentheses and spacing in Elixir expressions.
 
   and **never** do this, since it's invalid (note the missing `[` and `]`):
 
@@ -122,11 +131,16 @@ custom classes must fully style the input
 
 ### LiveView streams
 
-- **Always** use LiveView streams for collections for assigning regular lists to avoid memory ballooning and runtime termination with the following operations:
+- Prefer streams for large or incrementally updated DOM collections when the server does not need
+  to retain every rendered item. Ordinary assigns remain appropriate for small, bounded collections
+  and data needed for server-side computation or form handling. For a stream, use:
   - basic append of N items - `stream(socket, :messages, [new_msg])`
   - resetting stream with new items - `stream(socket, :messages, [new_msg], reset: true)` (e.g. for filtering items)
-  - prepend to stream - `stream(socket, :messages, [new_msg], at: -1)`
+  - prepend to stream - `stream(socket, :messages, [new_msg], at: 0)`
   - deleting items - `stream_delete(socket, :messages, msg)`
+
+  Prepending multiple items at index `0` reverses their order. Use
+  `stream(socket, :messages, Enum.reverse(messages), at: 0)` to preserve the input order.
 
 - When using the `stream/3` interfaces in the LiveView, the LiveView template must 1) always set `phx-update="stream"` on the parent element, with a DOM id on the parent element like `id="messages"` and 2) consume the `@streams.stream_name` collection and use the id as the DOM id for each child. For a call like `stream(socket, :messages, [new_msg])` in the LiveView, the template would be:
 
@@ -136,7 +150,10 @@ custom classes must fully style the input
         </div>
       </div>
 
-- LiveView streams are *not* enumerable, so you cannot use `Enum.filter/2` or `Enum.reject/2` on them. Instead, if you want to filter, prune, or refresh a list of items on the UI, you **must refetch the data and re-stream the entire stream collection, passing reset: true**:
+- Stream assigns retain pending operations rather than the full rendered collection; consume them
+  directly in the template comprehension, not through `Enum.filter/2` or `Enum.reject/2`. For a new
+  filtered result set, query the data source (or use separately owned application data), then reset
+  the stream. Individual removals can use `stream_delete/3` without resetting the whole collection:
 
       def handle_event("filter", %{"filter" => filter}, socket) do
         # re-fetch the messages based on the filter
@@ -149,45 +166,76 @@ custom classes must fully style the input
          |> stream(:messages, messages, reset: true)}
       end
 
-- LiveView streams *do not support counting or empty states*. If you need to display a count, you must track it using a separate assign. For empty states, you can use Tailwind classes:
+- Do not derive the total displayed count or emptiness from pending stream operations. Track a
+  count separately when needed. An empty-state node inside the stream container needs its own
+  unique ID, just like every other direct child:
 
       <div id="tasks" phx-update="stream">
-        <div class="hidden only:block">No tasks yet</div>
+        <div id="tasks-empty" class="hidden only:block">No tasks yet</div>
         <div :for={{id, task} <- @streams.tasks} id={id}>
           {task.name}
         </div>
       </div>
 
-  The above only works if the empty state is the only HTML block alongside the stream for-comprehension.
+  This CSS approach assumes the empty-state node is the only non-item child. Keep it in the DOM:
+  non-stream children cannot be removed by conditional rendering once inserted, even after a reset.
 
-- When updating an assign that should change content inside any streamed item(s), you MUST re-stream the items
-  along with the updated assign:
+- When a shared assign changes content inside streamed rows, re-insert every affected row with the
+  new assign values. When editing switches from A to B, update both rows so A closes and B opens.
+  The following excerpt assumes `editing_message_id: nil` and `edit_form: nil` are assigned on mount.
+  It uses default stream DOM IDs. Context lookups must enforce the application's access policy.
+  `Chat.get_message/1` returns the latest record or `nil` when it is no longer available:
 
       def handle_event("edit_message", %{"message_id" => message_id}, socket) do
         message = Chat.get_message!(message_id)
-        edit_form = to_form(Chat.change_message(message, %{content: message.content}))
+        previous_id = socket.assigns.editing_message_id
+        edit_form =
+          message
+          |> Chat.change_message(%{content: message.content})
+          |> to_form(id: "edit-form-#{message.id}")
 
-        # re-insert message so @editing_message_id toggle logic takes effect for that stream item
-        {:noreply,
-         socket
-         |> stream_insert(:messages, message)
-         |> assign(:editing_message_id, String.to_integer(message_id))
-         |> assign(:edit_form, edit_form)}
+        socket =
+          socket
+          |> assign(:editing_message_id, message.id)
+          |> assign(:edit_form, edit_form)
+
+        socket =
+          if previous_id && previous_id != message.id do
+            case Chat.get_message(previous_id) do
+              nil ->
+                stream_delete(socket, :messages, %{id: previous_id})
+
+              previous_message ->
+                stream_insert(socket, :messages, previous_message, update_only: true)
+            end
+          else
+            socket
+          end
+
+        {:noreply, stream_insert(socket, :messages, message, update_only: true)}
       end
 
-  And in the template:
+  Template excerpt inside `<Layouts.app>`. The `update_only: true` operations assume the rows
+  already exist on the client; they avoid re-inserting a row that has been removed:
 
       <div id="messages" phx-update="stream">
         <div :for={{id, message} <- @streams.messages} id={id} class="flex group">
           {message.username}
           <%= if @editing_message_id == message.id do %>
             <%!-- Edit mode --%>
-            <.form for={@edit_form} id="edit-form-#{message.id}" phx-submit="save_edit">
-              ...
+            <.form for={@edit_form} id={"edit-form-#{message.id}"} phx-submit="save_edit">
+              <.input field={@edit_form[:content]} type="textarea" />
             </.form>
           <% end %>
         </div>
       </div>
+
+  Handle save, cancel, and deletion similarly: clear or replace the editing state and re-insert
+  the affected row if it still exists. Re-fetching the previous row avoids overwriting a concurrent
+  update with a stale copy. Handle deletion events by removing the row from the stream as well.
+
+Source: [stream operations, DOM requirements, and updates](https://phoenix-live-view.hexdocs.pm/1.2.0/Phoenix.LiveView.html#stream/4).
+The choice between assigns and streams is an application design decision, not a blanket API rule.
 
 - **Never** use the deprecated `phx-update="append"` or `phx-update="prepend"` for collections
 
@@ -224,14 +272,15 @@ when writing scripts inside the template**:
 
 #### External phx-hook
 
-External JS hooks (`<div id="myhook" phx-hook="MyHook">`) must be placed in `assets/js/` and passed to the
-LiveSocket constructor:
+Place external hook definitions in `assets/js/` and merge them into the existing LiveSocket
+configuration. Preserve colocated hooks and the existing connection options, including CSRF params:
 
     const MyHook = {
       mounted() { ... }
     }
     let liveSocket = new LiveSocket("/live", Socket, {
-      hooks: { MyHook }
+      params: {_csrf_token: csrfToken},
+      hooks: {...colocatedHooks, MyHook}
     });
 
 #### Pushing events between client and server
@@ -274,7 +323,9 @@ Where the server handled it via:
 - Come up with a step-by-step test plan that splits major test cases into small, isolated files. You may start with simpler tests that verify content exists, gradually add interaction tests
 - **Always reference the key element IDs you added in the LiveView templates in your tests** for `Phoenix.LiveViewTest` functions like `element/2`, `has_element/2`, selectors, etc
 - **Never** tests again raw HTML, **always** use `element/2`, `has_element/2`, and similar: `assert has_element?(view, "#my-form")`
-- Instead of relying on testing text content, which can change, favor testing for the presence of key elements
+- Use stable element IDs to target interactions, then assert the user-visible result, relevant
+  attributes, errors, or navigation. Text assertions are appropriate when the text is the behavior
+  under test; element existence alone does not establish that a calculation or action succeeded.
 - Focus on testing outcomes rather than implementation details
 - Be aware that `Phoenix.Component` functions like `<.form>` might produce different HTML than expected. Test against the output HTML structure, not your mental model of what you expect it to be
 - When facing test failures with element selectors, add debug statements to print the actual HTML, but use `LazyHTML` selectors to limit the output, ie:
@@ -294,7 +345,9 @@ If you want to create a form based on `handle_event` params:
       {:noreply, assign(socket, form: to_form(params))}
     end
 
-When you pass a map to `to_form/1`, it assumes said map contains the form params, which are expected to have string keys.
+When you pass a map to `to_form/1`, it assumes said map contains the form params, which are expected
+to have string keys. Both map-backed and changeset-backed forms are supported; use a changeset
+when schema casting/validation or changeset errors are needed.
 
 You can also specify a name to nest the params:
 
@@ -336,13 +389,23 @@ Always give the form an explicit, unique DOM ID, like `id="todo-form"`.
       <.input field={@form[:field]} type="text" />
     </.form>
 
-And **never** do this:
+The direct-changeset approach below is supported by Phoenix, but this project uses assigned
+`to_form` results in LiveViews for change tracking and consistent field access:
 
-    <%!-- NEVER do this (invalid) --%>
-    <.form for={@changeset} id="my-form">
-      <.input field={@changeset[:field]} type="text" />
+    <%!-- Supported API; use the assigned-form convention above in this project. --%>
+    <.form :let={f} for={@changeset} id="alternate-form">
+      <.input field={f[:field]} type="text" />
     </.form>
 
-- You are FORBIDDEN from accessing the changeset in the template as it will cause errors
-- **Never** use `<.form let={f} ...>` in the template, instead **always use `<.form for={@form} ...>`**, then drive all form references from the form assign as in `@form[:field]`. The UI should **always** be driven by a `to_form/2` assigned in the LiveView module that is derived from a changeset
+- Keep casting and validation in the LiveView/context, and access input fields through `@form[:field]`.
+  `Ecto.Changeset` itself does not implement Access, so `@changeset[:field]` is invalid even though
+  passing a changeset to the form component is supported.
+- Use `<.form for={@form} ...>` in LiveViews. Phoenix also supports `:let={f}` with a map or changeset,
+  but recommends assigned forms for LiveView optimization. These are distinct from HTML's ordinary
+  attributes; the slot-binding attribute is `:let`, not `let`.
+
+Sources: [forms and change tracking](https://phoenix-live-view.hexdocs.pm/1.2.0/Phoenix.Component.html#form/1),
+[to_form/2](https://phoenix-live-view.hexdocs.pm/1.2.0/Phoenix.Component.html#to_form/2),
+[HEEx syntax](https://phoenix-live-view.hexdocs.pm/1.2.0/Phoenix.Component.html#sigil_H/2),
+and [JavaScript hooks](https://phoenix-live-view.hexdocs.pm/1.2.0/js-interop.html#client-hooks-via-phx-hook).
 <!-- phoenix:liveview-end -->

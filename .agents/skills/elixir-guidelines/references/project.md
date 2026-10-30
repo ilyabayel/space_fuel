@@ -1,66 +1,112 @@
 # Project Elixir, Mix, and test rules
 
-Moved from the repository root `AGENTS.md`. These remain project requirements
-for this repository and take precedence over community style preferences.
+These are this repository's requirements. Project preferences below are distinct from the linked language and library contracts. They take precedence over community style preferences.
 
-## Project guidelines
+## Completion and dependencies
 
-- Use `mix precommit` alias when you are done with all changes and fix any pending issues
-- Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
+- Run the existing `mix precommit` alias when finishing changes. Inspect its definition in
+  `mix.exs`: aliases can run multiple tasks, including tasks that format source or update a lockfile.
+  Fix failures introduced by the current changes. Report unrelated existing failures or environment
+  blockers with the failing command; keep unrelated repairs outside the task's scope.
+- Prefer `Req` for application HTTP requests rather than adding HTTPoison, Tesla, or direct `:httpc`
+  calls. This is a project preference, not a Phoenix dependency guarantee. Check `mix.exs` and
+  `mix.lock` before using it. If HTTP work needs it and it is absent, add an explicit dependency
+  within the authorized task rather than assuming it exists.
+- Use standard `Time`, `Date`, `DateTime`, and `Calendar` APIs for supported date/time operations.
+  Check available parsers and the configured time-zone database before adding a dependency.
+  Add dependencies only when the task requires them or the user requests them; date parsing alone
+  does not mandate a particular third-party package.
 
-<!-- phoenix:elixir-start -->
-## Elixir guidelines
+Sources: [Mix aliases](https://mix.hexdocs.pm/Mix.html#module-aliases),
+[Req setup](https://req.hexdocs.pm/readme.html), and this repository's `mix.exs`/`mix.lock`.
+The choice of HTTP client and the boundary for unrelated repairs are local workflow policy.
 
-- Elixir lists **do not support index based access via the access syntax**
+## Elixir data and scope
 
-  **Never do this (invalid)**:
+- Use `Enum.at/2`, pattern matching, or `List` functions for positional list access. `list[index]`
+  does not implement indexed access; Access supports keyword-list keys instead.
+- Rebinding a variable inside `if`, `case`, or `cond` does not update an outer binding. Assign the
+  expression's result, and return a valid value on every branch. An `if` without `else` returns
+  `nil` when its condition is false.
 
-      i = 0
-      mylist = ["blue", "green"]
-      mylist[i]
+```elixir
+socket =
+  if connected?(socket) do
+    assign(socket, :val, val)
+  else
+    socket
+  end
+```
 
-  Instead, **always** use `Enum.at`, pattern matching, or `List` for index based list access, ie:
+- Keep one module per file as a project organization rule. Nested modules are legal Elixir;
+  module nesting by itself is not evidence of a cyclic dependency.
+- Use `struct.field` or the struct's public API for field access, unless it explicitly implements
+  `Access`. For changesets, use `Ecto.Changeset.get_field/2`; for `Phoenix.HTML.Form`,
+  `form[:field]` is supported. Avoid treating all structs as interchangeable maps.
+- Keep unbounded user input as strings or validate it against a bounded lookup; avoid
+  `String.to_atom/1` on untrusted data. See [code.md](code.md#4-dynamic-atom-creation).
+- Give ordinary boolean predicates a trailing `?`; reserve `is_` for guard-compatible checks.
 
-      i = 0
-      mylist = ["blue", "green"]
-      Enum.at(mylist, i)
+Sources: [Access](https://elixir.hexdocs.pm/Access.html),
+[if](https://elixir.hexdocs.pm/Kernel.html#if/2),
+[variable scope](https://elixir.hexdocs.pm/case-cond-and-if.html),
+[changeset field access](https://ecto.hexdocs.pm/Ecto.Changeset.html#get_field/3), and
+[form field access](https://phoenix-html.hexdocs.pm/Phoenix.HTML.Form.html).
 
-- Elixir variables are immutable, but can be rebound, so for block expressions like `if`, `case`, `cond`, etc
-  you *must* bind the result of the expression to a variable if you want to use it and you CANNOT rebind the result inside the expression, ie:
+## OTP names and concurrent work
 
-      # INVALID: we are rebinding inside the `if` and the result never gets assigned
-      if connected?(socket) do
-        socket = assign(socket, :val, val)
-      end
+- `DynamicSupervisor` may be unnamed and addressed by PID. Give it a `:name` when stable name-based
+  lookup is needed. `Registry.start_link/1` requires both `:name` and `:keys`; choose `:unique` or
+  `:duplicate` to match the registration contract.
 
-      # VALID: we rebind the result of the `if` to a new variable
-      socket =
-        if connected?(socket) do
-          assign(socket, :val, val)
-        end
+```elixir
+children = [
+  {Registry, keys: :unique, name: SpaceFuel.WorkerRegistry},
+  {DynamicSupervisor, strategy: :one_for_one, name: SpaceFuel.WorkerSupervisor}
+]
+```
 
-- **Never** nest multiple modules in the same file as it can cause cyclic dependencies and compilation errors
-- **Never** use map access syntax (`changeset[:field]`) on structs as they do not implement the Access behaviour by default. For regular structs, you **must** access the fields directly, such as `my_struct.field` or use higher level APIs that are available on the struct if they exist, `Ecto.Changeset.get_field/2` for changesets
-- Elixir's standard library has everything necessary for date and time manipulation. Familiarize yourself with the common `Time`, `Date`, `DateTime`, and `Calendar` interfaces by accessing their documentation as necessary. **Never** install additional dependencies unless asked or for date/time parsing (which you can use the `date_time_parser` package)
-- Don't use `String.to_atom/1` on user input (memory leak risk)
-- Predicate function names should not start with `is_` and should end in a question mark. Names like `is_thing` should be reserved for guards
-- Elixir's builtin OTP primitives like `DynamicSupervisor` and `Registry`, require names in the child spec, such as `{DynamicSupervisor, name: MyApp.MyDynamicSup}`, then you can use `DynamicSupervisor.start_child(MyApp.MyDynamicSup, child_spec)`
-- Use `Task.async_stream(collection, callback, options)` for concurrent enumeration with back-pressure. The majority of times you will want to pass `timeout: :infinity` as option
+- Use `Task.async_stream/3` when concurrent processing is justified. Set concurrency and timeout
+  according to workload and external-service limits. Its default per-task timeout is 5,000 ms;
+  a timeout exits the caller by default. Use `on_timeout: :kill_task` when timed-out tasks should
+  produce `{:exit, :timeout}` results, and handle those results explicitly.
+- Choose `timeout: :infinity` only when indefinite waiting is intentional or another layer provides
+  the required deadline/cancellation. `on_timeout` cannot bound a task when its timeout is infinite.
+  For task-crash isolation, consider `Task.Supervisor.async_stream_nolink` and handle failures;
+  `Task.async_stream` links task execution to the caller.
 
-## Mix guidelines
+Sources: [DynamicSupervisor.start_link/1](https://elixir.hexdocs.pm/DynamicSupervisor.html#start_link/1),
+[Registry.start_link/1](https://elixir.hexdocs.pm/Registry.html#start_link/1), and
+[Task.async_stream options](https://elixir.hexdocs.pm/Task.html#async_stream/5).
 
-- Read the docs and options before using tasks (by using `mix help task_name`)
-- To debug test failures, run tests in a specific file with `mix test test/my_test.exs` or run all previously failed tests with `mix test --failed`
-- `mix deps.clean --all` is **almost never needed**. **Avoid** using it unless you have good reason
+## Mix and test process lifecycle
 
-## Test guidelines
+- Read `mix help task_name` before using an unfamiliar task or option. To isolate test failures,
+  run the relevant test file or `mix test --failed`. Use `mix deps.clean --all` only with a
+  demonstrated need; it is not a routine debugging step.
+- Start test-owned OTP services with `start_supervised!/1` so ExUnit manages cleanup. For
+  deliberately short-lived tasks or raw processes, establish explicit ownership and cleanup.
+- Synchronize on observable events rather than `Process.sleep/1` or a racy `Process.alive?/1` check.
+  Establish a monitor before triggering the exit you want to observe, then assert the expected
+  `:DOWN` reason. Observing one PID's exit does not establish whether a supervisor restarted a child.
 
-- **Always use `start_supervised!/1`** to start processes in tests as it guarantees cleanup between tests
-- **Avoid** `Process.sleep/1` and `Process.alive?/1` in tests
-  - Instead of sleeping to wait for a process to finish, **always** use `Process.monitor/1` and assert on the DOWN message:
+```elixir
+ref = Process.monitor(pid)
+send(pid, :finish)
+assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+```
 
-      ref = Process.monitor(pid)
-      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+The example assumes the worker handles `:finish` by exiting normally.
 
-   - Instead of sleeping to synchronize before the next call, **always** use `_ = :sys.get_state/1` to ensure the process has handled prior messages
-<!-- phoenix:elixir-end -->
+- For an ordinary, unsuspended GenServer using its normal mailbox loop, a synchronous call from the
+  test can establish that earlier ordinary messages from that same test process were handled.
+  `:sys.get_state(pid)` can serve that purpose when no suitable public synchronization API exists.
+  This relies on the normal message ordering and receive behavior, not a global completion barrier.
+  It does not wait for messages from other senders, deferred work, spawned tasks, priority-message
+  reordering, or a suspended server's ordinary mailbox. Use an explicit completion reply/event for
+  those cases.
+
+Sources: [ExUnit process supervision](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#start_supervised/2),
+[Process.monitor/1](https://elixir.hexdocs.pm/Process.html#monitor/1),
+[Erlang signal ordering and mailbox behavior](https://www.erlang.org/doc/system/ref_man_processes.html#signals),
+and [sys.get_state](https://www.erlang.org/doc/apps/stdlib/sys.html#get_state/1).

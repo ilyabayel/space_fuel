@@ -15,7 +15,7 @@ Project instructions and configured formatters take precedence over community st
 - `references/design.md`: 6 design-related anti-patterns.
 - `references/process.md`: 4 OTP/process anti-patterns.
 - `references/metaprogramming.md`: 5 macro/compiler anti-patterns.
-- `scripts/check.sh`: safe read-only project quality checks; no dependency installation.
+- `scripts/check.sh`: project quality checks without automatic source formatting or dependency installation; compilation/tests may write build artifacts and execute application code.
 
 ## Install in your code repository
 

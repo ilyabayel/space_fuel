@@ -3,7 +3,7 @@ name: elixir-guidelines
 description: Apply Elixir community style conventions, BEAM/OTP engineering guidelines, and this repository's Phoenix project rules when writing, reviewing, or refactoring code. Cover all 25 official Elixir v1.20.5 anti-patterns and verify changes with Mix and ExUnit. Trigger for .ex/.exs code, Elixir style reviews, Phoenix/Ecto/HEEx/LiveView work, Phoenix frontend assets and UI, GenServer/Supervisor design, macro authoring, and Elixir maintainability or performance work.
 metadata:
   source: "Elixir 1.20.5 official anti-pattern guides; community Elixir Style Guide; repository AGENTS.md"
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Elixir Guidelines
@@ -26,8 +26,8 @@ Use this skill for new Elixir code, modifications to existing Elixir application
 3. **Find candidates, not just syntax matches.** Examine the surrounding invariants, data input trust boundary, process lifecycle, contracts, caller expectations, workload and benchmarks. A matching syntax alone is not proof of an issue.
 4. **Prioritize by risk.** Address crash/security/correctness hazards first, then supervision and concurrency issues, unexpected return contracts and compile correctness, and only then readability and premature optimization. Don't assert a performance improvement without profiling or benchmarking.
 5. **Choose a proportionate fix.** Prefer the smallest change that resolves the demonstrated problem. If the existing approach is justified, keep it and explain why. Preserve behavior unless the user explicitly requests an intentional semantic change.
-6. **Add regression coverage.** Cover malformed inputs, missing keys, error tuples, process failure/restart, public API contracts, or macro recompilation dependencies where relevant.
-7. **Verify.** Run `mix format --check-formatted`, `mix compile --warnings-as-errors`, and relevant `mix test` commands as supported by the project. If present and configured, use Credo, Dialyzer, and `mix xref`. Use `scripts/check.sh` for a best-effort baseline check. State which commands you actually ran; never claim checks passed without execution.
+6. **Add regression coverage where behavior changes.** Cover malformed inputs, missing keys, error tuples, process failure/restart, public API contracts, or macro recompilation dependencies where relevant. For documentation-only changes, validate links and affected examples rather than adding application tests that assert document wording.
+7. **Verify proportionately.** Follow the project's completion checks in `references/project.md`. For code changes, run the configured formatter, compilation, and relevant tests, or the project alias that already includes them. Use optional Credo, Dialyzer, and `mix xref` checks where they address the change. `scripts/check.sh` is an alternative baseline, not an additional mandatory repeat of successful checks. State which commands actually ran, and distinguish introduced failures from existing/environment failures.
 
 ## Project requirements moved from AGENTS.md
 
@@ -37,8 +37,9 @@ Use this skill for new Elixir code, modifications to existing Elixir application
 | Phoenix routing, layouts, HEEx, LiveView, forms, streams, hooks, or LiveView tests | [references/phoenix.md](references/phoenix.md) |
 | Phoenix frontend assets, Tailwind/CSS/JavaScript, or UI design | [references/frontend.md](references/frontend.md) |
 
-These references preserve the former root `AGENTS.md` guidelines and examples. Load all three for
-a full project audit; for a focused change, load only the applicable references.
+These references adapt the former root `AGENTS.md` guidelines, correct their examples, and link
+official API contracts separately from local policy. Load all three for a full project audit;
+for a focused change, load only the applicable references.
 
 ## Reporting format
 
