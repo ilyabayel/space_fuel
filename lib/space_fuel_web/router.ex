@@ -17,7 +17,7 @@ defmodule SpaceFuelWeb.Router do
   scope "/", SpaceFuelWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", MissionLive, :index
   end
 
   # Other scopes may use custom stacks.

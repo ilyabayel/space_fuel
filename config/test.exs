@@ -14,6 +14,9 @@ config :phoenix,
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
+# Browser-based E2E tests
+config :phoenix_test, otp_app: :space_fuel
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :space_fuel, SpaceFuelWeb.Endpoint,
@@ -21,8 +24,4 @@ config :space_fuel, SpaceFuelWeb.Endpoint,
   secret_key_base: "uS+i0ipgo+gcRFpgs7lMA8LAAxD31OjN5oQBq9ToSLnNAZlV9ouIWNnCJYy2vMbn",
   server: false
 
-# Browser-based E2E tests
-config :phoenix_test, otp_app: :space_fuel
-
-config :space_fuel, SpaceFuelWeb.Endpoint,
-  server: true
+config :space_fuel, SpaceFuelWeb.Endpoint, server: true
