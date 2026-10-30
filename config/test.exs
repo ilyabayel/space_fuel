@@ -20,3 +20,9 @@ config :space_fuel, SpaceFuelWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "uS+i0ipgo+gcRFpgs7lMA8LAAxD31OjN5oQBq9ToSLnNAZlV9ouIWNnCJYy2vMbn",
   server: false
+
+# Browser-based E2E tests
+config :phoenix_test, otp_app: :space_fuel
+
+config :space_fuel, SpaceFuelWeb.Endpoint,
+  server: true
