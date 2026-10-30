@@ -12,9 +12,9 @@ defmodule SpaceFuel.Missions.PresetsTest do
       steps = Enum.map(preset.steps, fn {action, planet} -> %{"action" => action, "planet" => planet} end)
       assert Missions.change_mission(%{"mass" => preset.mass, "steps" => steps}).valid?
 
-      assert Missions.preset_route_description(preset) ==
+      assert Missions.get_preset_route_description(preset) ==
                preset.steps
-               |> Enum.map(fn {_, planet} -> Missions.planet_label(planet) end)
+               |> Enum.map(fn {_, planet} -> Missions.get_planet_label(planet) end)
                |> Enum.dedup()
                |> Enum.join(" → ")
     end

@@ -31,7 +31,7 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
   @doc "Returns safe parameters or a field and rejection message. Bound and normalize raw input before Ecto expands and casts embedded rows."
   @spec validate(term()) :: {:ok, map()} | {:error, {atom(), String.t()}}
   def validate(params) when is_map(params) and not is_struct(params) do
-    params = known_fields(params, @mission_fields)
+    params = get_known_fields(params, @mission_fields)
 
     with :ok <- validate_mass(Map.get(params, :mass)),
          {:ok, steps} <- validate_steps(Map.get(params, :steps, %{})),
@@ -66,7 +66,7 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
 
   defp validate_steps(steps) when is_map(steps) and not is_struct(steps) and map_size(steps) <= @max_steps do
     Enum.reduce_while(steps, {:ok, %{}}, fn {index, step}, {:ok, safe} ->
-      with true <- valid_index?(index), {:ok, step} <- normalize_step(step) do
+      with true <- accepts_index?(index), {:ok, step} <- normalize_step(step) do
         {:cont, {:ok, Map.put(safe, index, step)}}
       else
         _ -> {:halt, {:error, {:steps, "Flight stages contain malformed values."}}}
@@ -80,20 +80,20 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
   defp validate_steps(_), do: {:error, {:steps, "Flight stages must be a collection of stages."}}
 
   defp normalize_step(step) when is_map(step) and not is_struct(step) do
-    step = known_fields(step, @step_fields)
-    if Enum.all?(Map.values(step), &scalar?(&1, @max_scalar_bytes)), do: {:ok, step}, else: :error
+    step = get_known_fields(step, @step_fields)
+    if Enum.all?(Map.values(step), &accepts_scalar?(&1, @max_scalar_bytes)), do: {:ok, step}, else: :error
   end
 
   defp normalize_step(_), do: :error
 
   defp validate_unused(params) do
-    if scalar?(Map.get(params, :_unused_mass), @max_scalar_bytes),
+    if accepts_scalar?(Map.get(params, :_unused_mass), @max_scalar_bytes),
       do: :ok,
       else: {:error, {:mass, "Mass input is malformed."}}
   end
 
   defp validate_indexes(indexes, limit) when is_list(indexes) do
-    if length(indexes) <= limit and Enum.all?(indexes, &valid_index?/1) do
+    if length(indexes) <= limit and Enum.all?(indexes, &accepts_index?/1) do
       {:ok, indexes}
     else
       {:error, {:steps, "Flight stage ordering or removal is invalid or too large."}}
@@ -112,9 +112,9 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
     end
   end
 
-  defp valid_index?(index), do: is_binary(index) and byte_size(index) <= @max_scalar_bytes
-  defp scalar?(nil, _limit), do: true
-  defp scalar?(value, limit), do: is_binary(value) and byte_size(value) <= limit
+  defp accepts_index?(index), do: is_binary(index) and byte_size(index) <= @max_scalar_bytes
+  defp accepts_scalar?(nil, _limit), do: true
+  defp accepts_scalar?(value, limit), do: is_binary(value) and byte_size(value) <= limit
 
   defp validate_step_count(steps, sort, drop) do
     sorted = sort -- drop
@@ -137,7 +137,7 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
   end
 
   # Field atoms are fixed at compile time; form submissions use the corresponding string keys.
-  defp known_fields(params, fields) do
+  defp get_known_fields(params, fields) do
     Enum.reduce(fields, %{}, fn {atom_key, string_key}, result ->
       case fetch_field(params, atom_key, string_key) do
         {:ok, value} -> Map.put(result, atom_key, value)

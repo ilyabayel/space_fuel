@@ -70,14 +70,14 @@ defmodule SpaceFuel.Missions.MissionTest do
       changeset = Missions.change_mission(attrs)
       refute changeset.valid?
       assert changeset.params == nil
-      assert is_binary(Missions.input_error(changeset))
+      assert is_binary(Missions.get_input_error(changeset))
     end
   end
 
   test "ordinary changeset errors are distinct from unsafe input rejections" do
     changeset = Missions.change_mission(%{"mass" => "0", "steps" => [%{"action" => "fly", "planet" => "earth"}]})
     refute changeset.valid?
-    assert Missions.input_error(changeset) == nil
+    assert Missions.get_input_error(changeset) == nil
     assert changeset.params["mass"] == "0"
   end
 

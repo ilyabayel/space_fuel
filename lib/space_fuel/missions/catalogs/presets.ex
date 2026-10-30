@@ -34,12 +34,12 @@ defmodule SpaceFuel.Missions.Catalogs.Presets do
     }
   ]
 
-  def all, do: @presets
-  def fetch(id), do: Enum.find(@presets, &(&1.id == id))
+  def presets, do: @presets
+  def get(id), do: Enum.find(@presets, &(&1.id == id))
 
-  def route_description(preset) do
+  def get_route_description(preset) do
     preset.steps
-    |> Enum.map(fn {_action, planet} -> Planet.label(planet) end)
+    |> Enum.map(fn {_action, planet} -> Planet.get_label(planet) end)
     |> Enum.dedup()
     |> Enum.join(" → ")
   end

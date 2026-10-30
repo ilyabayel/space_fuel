@@ -8,8 +8,8 @@ defmodule SpaceFuel.Missions.PlanetTest do
   end
 
   test "gravity uses m/s² scaled by one thousand" do
-    assert Missions.gravity("earth") == 9807
-    assert Missions.gravity("moon") == 1620
-    assert Missions.gravity("mars") == 3711
+    assert Missions.get_gravity("earth") == 9807
+    assert Missions.get_gravity("moon") == 1620
+    assert Missions.get_gravity("mars") == 3711
   end
 end

@@ -15,8 +15,8 @@ defmodule SpaceFuel.Missions do
   def change_mission(attrs), do: Mission.changeset(%Mission{}, attrs)
 
   @doc "Returns a message when input was rejected before casting."
-  @spec input_error(Ecto.Changeset.t()) :: String.t() | nil
-  defdelegate input_error(changeset), to: Mission
+  @spec get_input_error(Ecto.Changeset.t()) :: String.t() | nil
+  defdelegate get_input_error(changeset), to: Mission
 
   @doc "Calculates a mission from a valid changeset."
   @spec calculate_mission(Ecto.Changeset.t()) :: Result.t()
@@ -30,8 +30,8 @@ defmodule SpaceFuel.Missions do
   defdelegate calculate_fuel(mass, steps), to: CalculateFuel, as: :call
 
   @doc "Returns maneuver fuel for a validated action, mass and scaled gravity."
-  @spec fuel_required(String.t(), non_neg_integer(), pos_integer()) :: non_neg_integer()
-  defdelegate fuel_required(action, mass, gravity), to: CalculateManeuverFuel, as: :call
+  @spec calculate_maneuver_fuel(String.t(), non_neg_integer(), pos_integer()) :: non_neg_integer()
+  defdelegate calculate_maneuver_fuel(action, mass, gravity), to: CalculateManeuverFuel, as: :call
 
   @doc "Maximum accepted spacecraft mass in kilograms."
   defdelegate max_mass(), to: MissionParams
@@ -40,17 +40,17 @@ defmodule SpaceFuel.Missions do
   @doc "Ordered maneuver labels and identifiers."
   defdelegate maneuver_options(), to: Maneuver, as: :options
   @doc "Display label for a validated maneuver identifier."
-  defdelegate maneuver_label(id), to: Maneuver, as: :label
+  defdelegate get_maneuver_label(id), to: Maneuver, as: :get_label
   @doc "Ordered planet labels and identifiers."
   defdelegate planet_options(), to: Planet, as: :options
   @doc "Display label for a validated planet identifier."
-  defdelegate planet_label(id), to: Planet, as: :label
+  defdelegate get_planet_label(id), to: Planet, as: :get_label
   @doc "Gravity for a validated planet identifier, scaled by 1,000."
-  defdelegate gravity(id), to: Planet
+  defdelegate get_gravity(id), to: Planet
   @doc "Ordered reference missions and picker metadata."
-  defdelegate presets(), to: Presets, as: :all
+  defdelegate presets(), to: Presets, as: :presets
   @doc "Returns a reference mission by identifier, or nil."
-  defdelegate get_preset(id), to: Presets, as: :fetch
+  defdelegate get_preset(id), to: Presets, as: :get
   @doc "Describes the planet sequence of a reference mission."
-  defdelegate preset_route_description(preset), to: Presets, as: :route_description
+  defdelegate get_preset_route_description(preset), to: Presets, as: :get_route_description
 end

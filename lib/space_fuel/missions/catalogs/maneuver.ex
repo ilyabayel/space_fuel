@@ -23,13 +23,13 @@ defmodule SpaceFuel.Missions.Catalogs.Maneuver do
   @labels Map.new(@options, fn {label, id} -> {id, label} end)
 
   @doc "Returns the display label for a supported identifier."
-  @spec label(String.t()) :: String.t()
-  def label(id), do: Map.fetch!(@labels, id)
+  @spec get_label(String.t()) :: String.t()
+  def get_label(id), do: Map.fetch!(@labels, id)
 
   @doc "Returns display labels and string identifiers in maneuver display order."
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options
 
   @doc "Returns the scaled formula for a supported maneuver."
-  def formula(action), do: Map.fetch!(@formulas, action)
+  def get_formula(action), do: Map.fetch!(@formulas, action)
 end

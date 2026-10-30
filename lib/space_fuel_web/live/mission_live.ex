@@ -31,7 +31,7 @@ defmodule SpaceFuelWeb.MissionLive do
 
     changeset = Missions.change_mission(attrs)
 
-    case Missions.input_error(changeset) do
+    case Missions.get_input_error(changeset) do
       nil ->
         {:noreply,
          socket |> assign(:preset, "custom") |> assign(:mission_name, "Custom mission") |> update_mission(changeset, true)}

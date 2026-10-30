@@ -28,7 +28,7 @@ defmodule SpaceFuel.Missions.Services.CalculateFuel do
     |> Enum.reverse()
     |> Enum.reduce(%Result{}, fn step, result ->
       effective_mass = mass + result.total_fuel
-      fuel = CalculateManeuverFuel.call(step.action, effective_mass, Planet.gravity(step.planet))
+      fuel = CalculateManeuverFuel.call(step.action, effective_mass, Planet.get_gravity(step.planet))
       stage = %{action: step.action, planet: step.planet, effective_mass: effective_mass, fuel: fuel}
       %Result{total_fuel: result.total_fuel + fuel, steps: [stage | result.steps]}
     end)

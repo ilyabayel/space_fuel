@@ -23,7 +23,7 @@ defmodule SpaceFuel.Missions.Schemas.Mission do
         |> cast(params, [:mass])
         |> validate_required([:mass])
         |> validate_number(:mass, greater_than: 0, less_than_or_equal_to: MissionParams.max_mass())
-        |> cast_embed(:steps, with: &step_changeset/2, sort_param: :steps_sort, drop_param: :steps_drop)
+        |> cast_embed(:steps, with: &build_step_changeset/2, sort_param: :steps_sort, drop_param: :steps_drop)
         |> validate_length(:steps, max: MissionParams.max_steps())
 
       {:error, {field, message}} ->
@@ -34,14 +34,14 @@ defmodule SpaceFuel.Missions.Schemas.Mission do
   end
 
   @doc "Returns the boundary rejection message when raw input cannot be safely rendered."
-  @spec input_error(Ecto.Changeset.t()) :: String.t() | nil
-  def input_error(%Ecto.Changeset{errors: errors}) do
+  @spec get_input_error(Ecto.Changeset.t()) :: String.t() | nil
+  def get_input_error(%Ecto.Changeset{errors: errors}) do
     Enum.find_value(errors, fn {_field, {message, opts}} ->
       if opts[:validation] == :input_boundary, do: message
     end)
   end
 
-  defp step_changeset(step, attrs) do
+  defp build_step_changeset(step, attrs) do
     attrs = if attrs == %{}, do: %{"action" => "launch", "planet" => "earth"}, else: attrs
     FlightStep.changeset(step, attrs)
   end

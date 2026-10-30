@@ -75,7 +75,7 @@ defmodule SpaceFuelWeb.MissionComponents do
           class={["preset", @preset == item.id && "active"]}
           aria-pressed={to_string(@preset == item.id)}
         >
-          <span class={["preset-orb", "orb-#{item.id}"]} aria-hidden="true">{item.icon}</span><span class="preset-copy"><strong>{item.name}</strong><small>{Missions.preset_route_description(
+          <span class={["preset-orb", "orb-#{item.id}"]} aria-hidden="true">{item.icon}</span><span class="preset-copy"><strong>{item.name}</strong><small>{Missions.get_preset_route_description(
             item
           )}</small></span><span class="preset-radio" aria-hidden="true"></span>
         </button>
@@ -236,9 +236,9 @@ defmodule SpaceFuelWeb.MissionComponents do
               "planet-dot",
               "planet-#{step.planet}"
             ]}></span><div class="stage-name">
-              <strong>{Missions.maneuver_label(step.action)} {Missions.planet_label(step.planet)}</strong><small>Effective mass · {format_number(
-                step.effective_mass
-              )} kg</small>
+              <strong>{Missions.get_maneuver_label(step.action)} {Missions.get_planet_label(
+                step.planet
+              )}</strong><small>Effective mass · {format_number(step.effective_mass)} kg</small>
             </div><div class="stage-fuel">
               <strong>{format_number(step.fuel)} <small>kg</small></strong><span>FUEL REQUIRED</span>
             </div>
@@ -304,7 +304,9 @@ defmodule SpaceFuelWeb.MissionComponents do
                   <span :if={index > 1} class="visual-connector" aria-hidden="true"><span>›</span></span>
                   <span class="visual-stage-number">{index}</span>
                   <span class={["visual-planet", "visual-planet-#{step.planet}"]} aria-hidden="true"><span></span></span>
-                  <strong>{Missions.maneuver_label(step.action)} {Missions.planet_label(step.planet)}</strong>
+                  <strong>{Missions.get_maneuver_label(step.action)} {Missions.get_planet_label(
+                    step.planet
+                  )}</strong>
                   <span class="visual-stage-caption">STAGE {String.pad_leading(
                     to_string(index),
                     2,

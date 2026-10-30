@@ -18,14 +18,14 @@ defmodule SpaceFuel.Missions.Catalogs.Planet do
   @labels Map.new(@options, fn {label, id} -> {id, label} end)
 
   @doc "Returns the display label for a supported identifier."
-  @spec label(String.t()) :: String.t()
-  def label(id), do: Map.fetch!(@labels, id)
+  @spec get_label(String.t()) :: String.t()
+  def get_label(id), do: Map.fetch!(@labels, id)
 
   @doc "Returns display labels and string identifiers in planet display order."
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options
 
   @doc "Returns gravity scaled by 1,000 for a supported planet identifier."
-  @spec gravity(String.t()) :: pos_integer()
-  def gravity(planet), do: Map.fetch!(@gravity, planet)
+  @spec get_gravity(String.t()) :: pos_integer()
+  def get_gravity(planet), do: Map.fetch!(@gravity, planet)
 end
