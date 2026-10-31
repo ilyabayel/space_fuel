@@ -7,9 +7,9 @@ defmodule SpaceFuel.Missions.Catalogs.PlanetTest do
     assert Missions.planet_options() == [{"Earth", "earth"}, {"Moon", "moon"}, {"Mars", "mars"}]
   end
 
-  test "gravity uses m/s² scaled by one thousand" do
-    assert Missions.get_gravity("earth") == 9807
-    assert Missions.get_gravity("moon") == 1620
-    assert Missions.get_gravity("mars") == 3711
+  test "gravity uses Decimal values in m/s²" do
+    assert Missions.get_gravity("earth") == Decimal.new("9.807")
+    assert Missions.get_gravity("moon") == Decimal.new("1.620")
+    assert Missions.get_gravity("mars") == Decimal.new("3.711")
   end
 end

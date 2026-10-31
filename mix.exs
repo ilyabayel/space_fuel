@@ -46,6 +46,7 @@ defmodule SpaceFuel.MixProject do
       {:sobelow, "~> 0.16", only: [:dev, :test], runtime: false},
       {:phoenix_test, "~> 0.12", only: :test},
       {:phoenix_test_playwright, "~> 0.19", only: :test, runtime: false},
+      {:decimal, "~> 3.0"},
       {:ecto, "~> 3.12"},
       {:phoenix_ecto, "~> 4.6"},
       {:phoenix, "~> 1.8.16"},

@@ -2,15 +2,15 @@ defmodule SpaceFuel.Missions.Catalogs.Planet do
   @moduledoc """
   Supported planets, in display order, and their gravity values.
 
-  Gravity is expressed in m/s² scaled by 1,000 (Earth's 9.807 becomes 9,807).
+  Gravity is expressed in m/s² as a Decimal.
   Add a planet to `@planets` to make it available to calculation, validation,
   and form dropdowns. Callers must validate planet identifiers before lookup.
   """
 
   @planets [
-    {"earth", "Earth", 9807},
-    {"moon", "Moon", 1620},
-    {"mars", "Mars", 3711}
+    {"earth", "Earth", Decimal.new("9.807")},
+    {"moon", "Moon", Decimal.new("1.620")},
+    {"mars", "Mars", Decimal.new("3.711")}
   ]
   @options Enum.map(@planets, fn {id, label, _gravity} -> {label, id} end)
   @gravity Map.new(@planets, fn {id, _label, gravity} -> {id, gravity} end)
@@ -25,7 +25,7 @@ defmodule SpaceFuel.Missions.Catalogs.Planet do
   @spec options() :: [{String.t(), String.t()}]
   def options, do: @options
 
-  @doc "Returns gravity scaled by 1,000 for a supported planet identifier."
-  @spec get_gravity(String.t()) :: pos_integer()
+  @doc "Returns gravity in m/s² for a supported planet identifier."
+  @spec get_gravity(String.t()) :: Decimal.t()
   def get_gravity(planet), do: Map.fetch!(@gravity, planet)
 end

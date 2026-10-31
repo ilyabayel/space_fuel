@@ -29,8 +29,8 @@ defmodule SpaceFuel.Missions do
   @spec calculate_fuel(pos_integer(), [CalculateFuel.step_input()]) :: Result.t()
   defdelegate calculate_fuel(mass, steps), to: CalculateFuel, as: :call
 
-  @doc "Returns maneuver fuel for a validated action, mass and scaled gravity."
-  @spec calculate_maneuver_fuel(String.t(), non_neg_integer(), pos_integer()) :: non_neg_integer()
+  @doc "Returns maneuver fuel for a validated action, mass and Decimal gravity."
+  @spec calculate_maneuver_fuel(String.t(), non_neg_integer(), Decimal.t()) :: non_neg_integer()
   defdelegate calculate_maneuver_fuel(action, mass, gravity), to: CalculateManeuverFuel, as: :call
 
   @doc "Maximum accepted spacecraft mass in kilograms."
@@ -45,7 +45,7 @@ defmodule SpaceFuel.Missions do
   defdelegate planet_options(), to: Planet, as: :options
   @doc "Display label for a validated planet identifier."
   defdelegate get_planet_label(id), to: Planet, as: :get_label
-  @doc "Gravity for a validated planet identifier, scaled by 1,000."
+  @doc "Gravity in m/s² as a Decimal for a validated planet identifier."
   defdelegate get_gravity(id), to: Planet
   @doc "Ordered reference missions and picker metadata."
   defdelegate presets(), to: Presets, as: :presets
