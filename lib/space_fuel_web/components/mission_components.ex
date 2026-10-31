@@ -27,7 +27,7 @@ defmodule SpaceFuelWeb.MissionComponents do
           SYSTEM ONLINE <span class="topbar-divider">|</span> <span>UNITS <strong>KG</strong></span>
         </div>
       </header>
-      <main class="workspace">
+      <main id="mission-planner" phx-hook="MissionFormLock" class="workspace">
         <div class="intro">
           <div>
             <div class="eyebrow">
@@ -65,10 +65,11 @@ defmodule SpaceFuelWeb.MissionComponents do
           <span class="section-index">01</span><h2 id="preset-heading">MISSION PRESETS</h2>
         </div><span>SELECT A MISSION TO GET STARTED</span>
       </div>
-      <div class="presets">
+      <div id="mission-presets" class="presets">
         <button
           :for={item <- Missions.presets()}
           type="button"
+          form="mission-form"
           id={"preset-#{item.id}"}
           phx-click="preset"
           phx-value-name={item.id}
@@ -103,11 +104,20 @@ defmodule SpaceFuelWeb.MissionComponents do
           <span class="section-index">02</span><h2 id="editor-heading">
             MISSION CONFIGURATION
           </h2>
-        </div><button type="button" id="reset-mission" phx-click="reset" class="text-action"><.icon
+        </div><button
+          type="button"
+          id="reset-mission"
+          form="mission-form"
+          phx-click="reset"
+          class="text-action"
+        ><.icon
           name="hero-arrow-path"
           class="size-4"
         /> Reset</button>
       </div>
+      <p id="mission-pending-status" class="mission-pending-status" role="status">
+        Updating mission…
+      </p>
       <.form
         for={@form}
         id="mission-form"
@@ -115,6 +125,7 @@ defmodule SpaceFuelWeb.MissionComponents do
         phx-submit="validate"
         class="mission-form"
       >
+        <button id="recalculate-mission" type="submit" hidden aria-hidden="true" tabindex="-1">Recalculate</button>
         <div class="field-heading">
           <div>
             <span class="field-icon"><.icon name="hero-cube" class="size-5" /></span><div>
@@ -125,10 +136,8 @@ defmodule SpaceFuelWeb.MissionComponents do
         <div class="mass-wrap">
           <.input
             field={@form[:mass]}
-            type="number"
-            min="1"
-            max={Missions.max_mass()}
-            step="1"
+            type="text"
+            inputmode="numeric"
             label="SPACECRAFT MASS"
             class="mass-input"
           /><span class="unit">kg</span>
@@ -166,8 +175,7 @@ defmodule SpaceFuelWeb.MissionComponents do
                 />
               </div>
               <button
-                type="button"
-                phx-click={JS.dispatch("change")}
+                type="submit"
                 name="mission[steps_drop][]"
                 value={step.index}
                 id={"remove-step-#{step.index}"}
@@ -179,8 +187,7 @@ defmodule SpaceFuelWeb.MissionComponents do
         </div>
         <input type="hidden" name="mission[steps_drop][]" value="" />
         <button
-          type="button"
-          phx-click={JS.dispatch("change")}
+          type="submit"
           name="mission[steps_sort][]"
           value="new"
           id="add-step"
@@ -214,14 +221,19 @@ defmodule SpaceFuelWeb.MissionComponents do
         <div id="fuel-result" class="result-hero">
           <div class="result-label">
             <.icon name="hero-bolt" class="size-4" /> TOTAL FUEL REQUIRED
-          </div><div class="total">{format_number(@result.total_fuel)} <span>kg</span></div><p>
+          </div><div class="total">
+            <span class="total-value">{format_number(@result.total_fuel)}</span>
+            <span class="total-unit">kg</span>
+          </div><p>
             Fuel required to complete your flight path
           </p><div class="fuel-bar"><span></span><span></span><span></span></div><div class="result-stats">
             <div><span>MISSION</span><strong>{@mission_name}</strong></div><div>
               <span>FLIGHT STAGES</span><strong>{length(@result.steps)
               |> to_string()
               |> String.pad_leading(2, "0")}</strong>
-            </div><div><span>CALCULATION</span><strong class="ready">● READY</strong></div>
+            </div><div>
+              <span>CALCULATION</span><strong class="ready"><span class="ready-label">● READY</span><span class="updating-label">● UPDATING</span></strong>
+            </div>
           </div>
         </div>
         <div class="breakdown-head">

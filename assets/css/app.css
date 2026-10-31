@@ -617,9 +617,19 @@ h1 span {
   font-weight: 750;
   line-height: 1;
   margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
 }
 
-.total span {
+.total-value {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.total-unit {
   color: #8ba9c4;
   font-size: 22px;
   letter-spacing: 0;
@@ -698,7 +708,8 @@ h1 span {
 }
 
 .breakdown-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 32px minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 13px;
   border-top: 1px solid #203449;
@@ -725,8 +736,12 @@ h1 span {
   background: radial-gradient(circle at 35% 30%, #e2a37a, #934b31 55%, #302222);
 }
 
+.stage-name, .stage-fuel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .stage-name {
-  flex: 1;
   display: grid;
   gap: 5px;
 }
@@ -1159,4 +1174,12 @@ footer {
   .preset:hover {
     transform: none;
   }
+}
+
+.mission-pending-status, .updating-label { display: none; }
+[data-mission-pending="true"] .mission-pending-status { display: block; padding: 0 26px; color: #a9d9ff; }
+[data-mission-pending="true"] .ready-label { display: none; }
+[data-mission-pending="true"] .updating-label { display: inline; }
+@media (max-width: 600px) {
+  .stage-fuel { grid-column: 3 / -1; text-align: left; }
 }

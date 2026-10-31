@@ -87,7 +87,7 @@ defmodule SpaceFuelWeb.MissionLiveTest do
     assert has_element?(view, "#result-step-2", "Launch Mars")
     assert has_element?(view, "#visual-stage-2", "Launch Mars")
     assert has_element?(view, "#result-step-3", "Launch Moon")
-    refute has_element?(view, "#fuel-result", "51,898")
+    assert has_element?(view, "#fuel-result", "61,668")
   end
 
   test "unexpected event parameters do not crash the session", %{conn: conn} do

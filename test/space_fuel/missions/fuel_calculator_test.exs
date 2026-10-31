@@ -68,4 +68,14 @@ defmodule SpaceFuel.Missions.FuelCalculatorTest do
 
     assert Missions.calculate_fuel(28_801, embedded_route) == Missions.calculate_fuel(28_801, route)
   end
+
+  test "large and edited routes retain exact integer results" do
+    assert Missions.calculate_fuel(999_999_999_999, build_steps(List.duplicate({"launch", "earth"}, 50))).total_fuel ==
+             336_681_682_585_413_579_314_401
+
+    assert Missions.calculate_fuel(28_801, build_steps(List.replace_at(@apollo, 1, {"launch", "mars"}))).total_fuel ==
+             61_668
+
+    assert Missions.calculate_fuel(1_000, build_steps(List.delete_at(@apollo, 1))).total_fuel == 1_155
+  end
 end
