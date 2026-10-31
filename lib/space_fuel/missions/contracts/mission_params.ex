@@ -40,13 +40,20 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
          :ok <- validate_step_count(steps, sort, drop),
          :ok <- validate_ids(steps),
          :ok <- validate_unused(params) do
-      safe = Map.take(params, [:mass, :steps_sort, :steps_drop, :_unused_mass])
-      safe = if Map.has_key?(params, :steps), do: Map.put(safe, :steps, steps), else: safe
-      {:ok, safe}
+      {:ok, safe_params(params, steps)}
     end
   end
 
   def validate(_), do: {:error, {:steps, "Mission input is malformed."}}
+
+  defp safe_params(params, steps) do
+    params
+    |> Map.take([:mass, :steps_sort, :steps_drop, :_unused_mass])
+    |> put_steps_if_present(params, steps)
+  end
+
+  defp put_steps_if_present(safe, %{steps: _}, steps), do: Map.put(safe, :steps, steps)
+  defp put_steps_if_present(safe, _params, _steps), do: safe
 
   defp validate_mass(value) when is_binary(value) and byte_size(value) <= 12, do: :ok
   defp validate_mass(value) when is_integer(value) and value >= -@max_mass and value <= @max_mass, do: :ok

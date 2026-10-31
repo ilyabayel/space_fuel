@@ -27,6 +27,10 @@ defmodule SpaceFuel.Missions.Schemas.FlightStep do
   end
 
   defp ensure_id(changeset) do
-    if get_field(changeset, :id), do: changeset, else: put_change(changeset, :id, Ecto.UUID.generate())
+    if get_field(changeset, :id) do
+      changeset
+    else
+      put_change(changeset, :id, Ecto.UUID.generate())
+    end
   end
 end

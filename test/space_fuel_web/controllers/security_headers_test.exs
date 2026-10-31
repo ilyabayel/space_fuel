@@ -5,9 +5,11 @@ defmodule SpaceFuelWeb.SecurityHeadersTest do
     previous = Application.get_env(:space_fuel, :csp_report_only)
 
     on_exit(fn ->
-      if previous,
-        do: Application.put_env(:space_fuel, :csp_report_only, previous),
-        else: Application.delete_env(:space_fuel, :csp_report_only)
+      if previous do
+        Application.put_env(:space_fuel, :csp_report_only, previous)
+      else
+        Application.delete_env(:space_fuel, :csp_report_only)
+      end
     end)
 
     policy = "default-src 'self'; script-src 'self'; object-src 'none'"

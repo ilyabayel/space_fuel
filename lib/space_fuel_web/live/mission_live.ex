@@ -64,11 +64,22 @@ defmodule SpaceFuelWeb.MissionLive do
   end
 
   defp update_mission(socket, changeset, validate?) do
-    result =
-      if changeset.valid?,
-        do: Missions.calculate_mission(changeset)
-
-    changeset = if validate?, do: Map.put(changeset, :action, :validate), else: changeset
+    result = mission_result(changeset)
+    changeset = mark_for_validation(changeset, validate?)
     socket |> assign(:form, to_form(changeset)) |> assign(:result, result) |> assign(:rejection, nil)
+  end
+
+  defp mission_result(changeset) do
+    if changeset.valid? do
+      Missions.calculate_mission(changeset)
+    end
+  end
+
+  defp mark_for_validation(changeset, validate?) do
+    if validate? do
+      Map.put(changeset, :action, :validate)
+    else
+      changeset
+    end
   end
 end

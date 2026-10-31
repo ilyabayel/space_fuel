@@ -104,7 +104,7 @@ defmodule SpaceFuelWeb.MissionE2ETest do
         assert snapshot["mass"] == "28801"
         assert snapshot["readonly"]
         assert Enum.all?(snapshot["selects"], & &1["inert"])
-        expected = if snapshot["selects"] == [], do: [], else: ~w(launch earth land moon launch moon land earth)
+        expected = expected_pending_selects(snapshot["selects"])
         assert Enum.map(snapshot["selects"], & &1["value"]) == expected
         assert snapshot["addDisabled"]
         assert snapshot["removeDisabled"]
@@ -386,4 +386,7 @@ defmodule SpaceFuelWeb.MissionE2ETest do
     |> refute_has("#remove-step-5")
     |> evaluate("window.changeObserver.disconnect(); window.liveSocket.disableLatencySim()")
   end
+
+  defp expected_pending_selects([]), do: []
+  defp expected_pending_selects(_selects), do: ~w(launch earth land moon launch moon land earth)
 end

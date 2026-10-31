@@ -37,12 +37,14 @@ defmodule SpaceFuel.Missions.Schemas.Mission do
   @spec get_input_error(Ecto.Changeset.t()) :: String.t() | nil
   def get_input_error(%Ecto.Changeset{errors: errors}) do
     Enum.find_value(errors, fn {_field, {message, opts}} ->
-      if opts[:validation] == :input_boundary, do: message
+      if opts[:validation] == :input_boundary do
+        message
+      end
     end)
   end
 
-  defp build_step_changeset(step, attrs) do
-    attrs = if attrs == %{}, do: %{"action" => "launch", "planet" => "earth"}, else: attrs
-    FlightStep.changeset(step, attrs)
-  end
+  defp build_step_changeset(step, attrs) when attrs == %{},
+    do: FlightStep.changeset(step, %{"action" => "launch", "planet" => "earth"})
+
+  defp build_step_changeset(step, attrs), do: FlightStep.changeset(step, attrs)
 end
