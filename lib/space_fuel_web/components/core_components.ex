@@ -398,8 +398,12 @@ defmodule SpaceFuelWeb.CoreComponents do
 
   def table(assigns) do
     assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+      case assigns.rows do
+        %Phoenix.LiveView.LiveStream{} ->
+          assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+
+        _rows ->
+          assigns
       end
 
     ~H"""

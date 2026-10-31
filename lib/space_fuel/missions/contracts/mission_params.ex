@@ -65,11 +65,10 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
   end
 
   defp validate_steps(steps) when is_map(steps) and not is_struct(steps) and map_size(steps) <= @max_steps do
-    Enum.reduce_while(steps, {:ok, %{}}, fn {index, step}, {:ok, safe} ->
-      with true <- accepts_index?(index), {:ok, step} <- normalize_step(step) do
-        {:cont, {:ok, Map.put(safe, index, step)}}
-      else
-        _ -> {:halt, {:error, {:steps, "Flight stages contain malformed values."}}}
+    Enum.reduce_while(steps, {:ok, %{}}, fn entry, {:ok, safe} ->
+      case normalize_step_entry(entry) do
+        {:ok, {index, step}} -> {:cont, {:ok, Map.put(safe, index, step)}}
+        {:error, _reason} = error -> {:halt, error}
       end
     end)
   end
@@ -79,17 +78,39 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
 
   defp validate_steps(_), do: {:error, {:steps, "Flight stages must be a collection of stages."}}
 
-  defp normalize_step(step) when is_map(step) and not is_struct(step) do
-    step = get_known_fields(step, @step_fields)
-    if Enum.all?(Map.values(step), &accepts_scalar?(&1, @max_scalar_bytes)), do: {:ok, step}, else: :error
+  defp normalize_step_entry({index, step}) do
+    with :ok <- validate_step_index(index),
+         {:ok, step} <- normalize_step(step) do
+      {:ok, {index, step}}
+    end
   end
 
-  defp normalize_step(_), do: :error
+  defp validate_step_index(index) do
+    if accepts_index?(index) do
+      :ok
+    else
+      {:error, {:steps, "Flight stages contain malformed values."}}
+    end
+  end
+
+  defp normalize_step(step) when is_map(step) and not is_struct(step) do
+    step = get_known_fields(step, @step_fields)
+
+    if Enum.all?(Map.values(step), &accepts_scalar?(&1, @max_scalar_bytes)) do
+      {:ok, step}
+    else
+      {:error, {:steps, "Flight stages contain malformed values."}}
+    end
+  end
+
+  defp normalize_step(_), do: {:error, {:steps, "Flight stages contain malformed values."}}
 
   defp validate_unused(params) do
-    if accepts_scalar?(Map.get(params, :_unused_mass), @max_scalar_bytes),
-      do: :ok,
-      else: {:error, {:mass, "Mass input is malformed."}}
+    if accepts_scalar?(Map.get(params, :_unused_mass), @max_scalar_bytes) do
+      :ok
+    else
+      {:error, {:mass, "Mass input is malformed."}}
+    end
   end
 
   defp validate_indexes(indexes, limit) when is_list(indexes) do
@@ -102,13 +123,21 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
 
   defp validate_indexes(_, _), do: {:error, {:steps, "Flight stage ordering or removal is malformed."}}
 
-  defp validate_drop(drop) do
+  defp validate_drop(drop) when is_list(drop) do
     with {:ok, indexes} <- validate_indexes(drop, @max_steps + 1),
-         true <- Enum.count(indexes, &(&1 == "")) <= 1,
-         true <- Enum.count(indexes, &(&1 != "")) <= @max_steps do
+         :ok <- validate_drop_count(indexes) do
       {:ok, indexes}
+    end
+  end
+
+  defp validate_drop(_), do: {:error, {:steps, "Flight stage ordering or removal is invalid or too large."}}
+
+  defp validate_drop_count(indexes) do
+    if Enum.count(indexes, &(&1 == "")) <= 1 and
+         Enum.count(indexes, &(&1 != "")) <= @max_steps do
+      :ok
     else
-      _ -> {:error, {:steps, "Flight stage ordering or removal is invalid or too large."}}
+      {:error, {:steps, "Flight stage ordering or removal is invalid or too large."}}
     end
   end
 
@@ -120,9 +149,11 @@ defmodule SpaceFuel.Missions.Contracts.MissionParams do
     sorted = sort -- drop
     pending = Map.drop(steps, sorted ++ drop)
 
-    if length(sorted) + map_size(pending) <= @max_steps,
-      do: :ok,
-      else: {:error, {:steps, "A route can contain at most 50 flight stages."}}
+    if length(sorted) + map_size(pending) <= @max_steps do
+      :ok
+    else
+      {:error, {:steps, "A route can contain at most 50 flight stages."}}
+    end
   end
 
   defp validate_ids(steps) do

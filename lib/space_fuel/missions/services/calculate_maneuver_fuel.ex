@@ -12,6 +12,11 @@ defmodule SpaceFuel.Missions.Services.CalculateManeuverFuel do
 
   defp calculate_fuel(mass, gravity, {coefficient, offset} = formula, total) do
     increment = div(mass * gravity * coefficient, @scale) - offset
-    if increment > 0, do: calculate_fuel(increment, gravity, formula, total + increment), else: total
+
+    if increment > 0 do
+      calculate_fuel(increment, gravity, formula, total + increment)
+    else
+      total
+    end
   end
 end
