@@ -1,11 +1,7 @@
-defmodule SpaceFuel.Missions.ManeuverTest do
+defmodule SpaceFuel.Missions.Services.CalculateManeuverFuelTest do
   use ExUnit.Case, async: true
 
   alias SpaceFuel.Missions
-
-  test "maneuver labels and display order remain stable" do
-    assert Missions.maneuver_options() == [{"Launch", "launch"}, {"Land", "land"}]
-  end
 
   test "launch includes successive fuel increments" do
     # A 1,000 kg launch on Earth needs increments of 378, 122, and 17 kg.
@@ -18,9 +14,12 @@ defmodule SpaceFuel.Missions.ManeuverTest do
     assert Missions.calculate_maneuver_fuel("land", 28_801, 9807) == 13_447
   end
 
-  test "integer flooring preserves the first positive fuel thresholds" do
+  test "integer flooring preserves the first positive launch fuel threshold" do
     assert Missions.calculate_maneuver_fuel("launch", 82, 9807) == 0
     assert Missions.calculate_maneuver_fuel("launch", 83, 9807) == 1
+  end
+
+  test "integer flooring preserves the first positive landing fuel threshold" do
     assert Missions.calculate_maneuver_fuel("land", 132, 9807) == 0
     assert Missions.calculate_maneuver_fuel("land", 133, 9807) == 1
   end

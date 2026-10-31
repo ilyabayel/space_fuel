@@ -1,4 +1,4 @@
-defmodule SpaceFuel.Missions.PlanetTest do
+defmodule SpaceFuel.Missions.Catalogs.PlanetTest do
   use ExUnit.Case, async: true
 
   alias SpaceFuel.Missions
